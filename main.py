@@ -3,6 +3,7 @@ import json
 import uuid
 import subprocess
 import tempfile
+import shutil
 from pathlib import Path
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -125,10 +126,20 @@ async def chat(audio: UploadFile = File(...)):
 
 # 2. Transcribe with Whisper
     try:
-        with open(tmp_path, "rb") as f:
+        # Convert to wav first — handles all iOS/Android/browser quirks
+        converted_path = tmp_path + ".wav"
+        ffmpeg_result = subprocess.run(
+            ["ffmpeg", "-y", "-i", tmp_path, "-ar", "16000", "-ac", "1", "-f", "wav", converted_path],
+            capture_output=True, text=True
+        )
+        if ffmpeg_result.returncode != 0:
+            print(f"ffmpeg stderr: {ffmpeg_result.stderr}")
+            raise Exception(f"ffmpeg conversion failed: {ffmpeg_result.stderr}")
+        print(f"Converted to wav: {converted_path}")
+        with open(converted_path, "rb") as f:
             transcript = openai_client.audio.transcriptions.create(
                 model="whisper-1",
-                file=(fname, f, ftype),
+                file=("audio.wav", f, "audio/wav"),
             )
         user_text = transcript.text.strip()
         print(f"TRANSCRIPT: {user_text}")
@@ -138,11 +149,10 @@ async def chat(audio: UploadFile = File(...)):
     finally:
         try:
             os.unlink(tmp_path)
+            if os.path.exists(converted_path):
+                os.unlink(converted_path)
         except Exception:
             pass
-
-    if not user_text:
-        raise HTTPException(status_code=400, detail="Empty transcript — no speech detected")
 
     # 3. Add user message to history and call Claude
     conversation_history.append({"role": "user", "content": user_text})
