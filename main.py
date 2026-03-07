@@ -115,9 +115,16 @@ async def chat(audio: UploadFile = File(...)):
     # 2. Transcribe with Whisper
     try:
         with open(tmp_path, "rb") as f:
+            # Detect format for Whisper filename hint
+            if audio.content_type and "mp4" in audio.content_type:
+                fname = "audio.mp4"
+                ftype = "audio/mp4"
+            else:
+                fname = "audio.webm"
+                ftype = "audio/webm"
             transcript = openai_client.audio.transcriptions.create(
                 model="whisper-1",
-                file=("audio.webm", f, "audio/webm"),
+                file=(fname, f, ftype),
             )
             user_text = transcript.text.strip()
             print(f"TRANSCRIPT: {user_text}")
