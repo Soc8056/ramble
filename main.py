@@ -126,21 +126,33 @@ async def chat(audio: UploadFile = File(...)):
 
 # 2. Transcribe with Whisper
     try:
-        # Convert to wav first — handles all iOS/Android/browser quirks
-        converted_path = tmp_path + ".wav"
-        ffmpeg_result = subprocess.run(
-            ["ffmpeg", "-y", "-i", tmp_path, "-ar", "16000", "-ac", "1", "-f", "wav", converted_path],
-            capture_output=True, text=True
-        )
-        if ffmpeg_result.returncode != 0:
-            print(f"ffmpeg stderr: {ffmpeg_result.stderr}")
-            raise Exception(f"ffmpeg conversion failed: {ffmpeg_result.stderr}")
-        print(f"Converted to wav: {converted_path}")
-        with open(converted_path, "rb") as f:
-            transcript = openai_client.audio.transcriptions.create(
-                model="whisper-1",
-                file=("audio.wav", f, "audio/wav"),
+        # iOS sends fragmented mp4 — send directly to Whisper, it handles mp4 natively
+        # Only convert webm via ffmpeg (Chrome/Firefox)
+        if ftype in ("audio/mp4",):
+            with open(tmp_path, "rb") as f:
+                transcript = openai_client.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=("audio.mp4", f, "audio/mp4"),
+                )
+        else:
+            converted_path = tmp_path + ".wav"
+            ffmpeg_result = subprocess.run(
+                ["ffmpeg", "-y", "-i", tmp_path, "-ar", "16000", "-ac", "1", "-f", "wav", converted_path],
+                capture_output=True, text=True
             )
+            if ffmpeg_result.returncode != 0:
+                print(f"ffmpeg stderr: {ffmpeg_result.stderr}")
+                raise Exception(f"ffmpeg conversion failed: {ffmpeg_result.stderr}")
+            with open(converted_path, "rb") as f:
+                transcript = openai_client.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=("audio.wav", f, "audio/wav"),
+                )
+            try:
+                os.unlink(converted_path)
+            except Exception:
+                pass
+
         user_text = transcript.text.strip()
         print(f"TRANSCRIPT: {user_text}")
     except Exception as e:
@@ -149,8 +161,6 @@ async def chat(audio: UploadFile = File(...)):
     finally:
         try:
             os.unlink(tmp_path)
-            if os.path.exists(converted_path):
-                os.unlink(converted_path)
         except Exception:
             pass
 
