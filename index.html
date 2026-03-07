@@ -276,7 +276,7 @@
           : 'audio/mp4';
         mediaRecorder = new MediaRecorder(s, { mimeType });
         mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
-        mediaRecorder.start(100);
+        mediaRecorder.start();
       } catch (e) {
         console.error('Recording error:', e);
         setStatus('Could not start recording: ' + e.message, 'error');
