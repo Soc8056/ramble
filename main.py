@@ -101,36 +101,39 @@ async def chat(audio: UploadFile = File(...)):
     # 1. Save audio to temp file
     try:
         audio_bytes = await audio.read()
-        suffix = ".webm"
-        if audio.content_type and "mp4" in audio.content_type:
-            suffix = ".mp4"
+        # Detect format from magic bytes — don't trust content-type header
+        if audio_bytes[:4] == b'fLaC':
+            suffix, fname, ftype = ".flac", "audio.flac", "audio/flac"
+        elif audio_bytes[4:8] == b'ftyp' or audio_bytes[:4] == b'\x00\x00\x00\x1c':
+            suffix, fname, ftype = ".mp4", "audio.mp4", "audio/mp4"
+        elif audio_bytes[:4] == b'OggS':
+            suffix, fname, ftype = ".ogg", "audio.ogg", "audio/ogg"
+        elif audio_bytes[:4] == b'RIFF':
+            suffix, fname, ftype = ".wav", "audio.wav", "audio/wav"
+        elif audio_bytes[:3] == b'ID3' or audio_bytes[:2] == b'\xff\xfb':
+            suffix, fname, ftype = ".mp3", "audio.mp3", "audio/mpeg"
+        else:
+            # Default to mp4 for iOS Safari which doesn't always set magic bytes right
+            suffix, fname, ftype = ".mp4", "audio.mp4", "audio/mp4"
         with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
             tmp.write(audio_bytes)
             tmp_path = tmp.name
-        print(f"Audio saved: {len(audio_bytes)} bytes → {tmp_path}")
+        print(f"Audio saved: {len(audio_bytes)} bytes, type={ftype} → {tmp_path}")
     except Exception as e:
         print(f"ERROR saving audio: {e}")
         raise HTTPException(status_code=500, detail=f"Audio save error: {e}")
 
-    # 2. Transcribe with Whisper
+# 2. Transcribe with Whisper
     try:
         with open(tmp_path, "rb") as f:
-            # Detect format for Whisper filename hint
-            if audio.content_type and "mp4" in audio.content_type:
-                fname = "audio.mp4"
-                ftype = "audio/mp4"
-            else:
-                fname = "audio.webm"
-                ftype = "audio/webm"
             transcript = openai_client.audio.transcriptions.create(
                 model="whisper-1",
                 file=(fname, f, ftype),
             )
-            user_text = transcript.text.strip()
-            print(f"TRANSCRIPT: {user_text}")
+        user_text = transcript.text.strip()
+        print(f"TRANSCRIPT: {user_text}")
     except Exception as e:
         print(f"ERROR in Whisper: {e}")
-        os.unlink(tmp_path)
         raise HTTPException(status_code=500, detail=f"Whisper error: {e}")
     finally:
         try:
