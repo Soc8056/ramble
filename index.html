@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Voice MVP</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0a;
+      color: #f0f0f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 32px;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: #fff;
+      text-align: center;
+    }
+
+    h1 span {
+      color: #7c3aed;
+    }
+
+    .status-bar {
+      font-size: 0.85rem;
+      color: #666;
+      text-align: center;
+      min-height: 20px;
+      transition: color 0.2s;
+    }
+
+    .status-bar.active { color: #a78bfa; }
+    .status-bar.error  { color: #f87171; }
+
+    /* The big mic button */
+    .mic-btn {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 2px solid #333;
+      background: #111;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      position: relative;
+    }
+
+    .mic-btn:hover { border-color: #7c3aed; }
+
+    .mic-btn.recording {
+      border-color: #ef4444;
+      background: #1a0505;
+      box-shadow: 0 0 0 8px rgba(239,68,68,0.15);
+      animation: pulse 1s ease-in-out infinite;
+    }
+
+    .mic-btn.playing {
+      border-color: #7c3aed;
+      background: #0d0a1a;
+      box-shadow: 0 0 0 8px rgba(124,58,237,0.15);
+    }
+
+    .mic-btn.loading {
+      border-color: #444;
+      cursor: wait;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 8px rgba(239,68,68,0.15); }
+      50%       { box-shadow: 0 0 0 16px rgba(239,68,68,0.05); }
+    }
+
+    .mic-icon { font-size: 2.5rem; pointer-events: none; }
+
+    .hint {
+      font-size: 0.75rem;
+      color: #444;
+      text-align: center;
+    }
+
+    /* Conversation log */
+    .log {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 340px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .log::-webkit-scrollbar { width: 4px; }
+    .log::-webkit-scrollbar-track { background: transparent; }
+    .log::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+    .bubble {
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      max-width: 90%;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } }
+
+    .bubble.user {
+      background: #1a1a2e;
+      border: 1px solid #2d2d4e;
+      align-self: flex-end;
+      color: #c4b5fd;
+    }
+
+    .bubble.ai {
+      background: #111;
+      border: 1px solid #222;
+      align-self: flex-start;
+      color: #e5e7eb;
+    }
+
+    /* Deploy result */
+    .deploy-card {
+      display: none;
+      width: 100%;
+      background: #0d1117;
+      border: 1px solid #238636;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .deploy-card.visible { display: block; }
+
+    .deploy-card h2 {
+      font-size: 1rem;
+      color: #3fb950;
+      margin-bottom: 8px;
+    }
+
+    .deploy-card a {
+      color: #58a6ff;
+      word-break: break-all;
+      font-size: 0.9rem;
+    }
+
+    .reset-btn {
+      background: transparent;
+      border: 1px solid #333;
+      color: #666;
+      padding: 8px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.15s;
+    }
+
+    .reset-btn:hover { border-color: #666; color: #aaa; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Voice <span>MVP</span></h1>
+
+    <div class="status-bar" id="status">Press and hold to speak</div>
+
+    <button class="mic-btn" id="micBtn">
+      <span class="mic-icon" id="micIcon">🎙️</span>
+    </button>
+
+    <div class="hint" id="hint">Hold the button while you talk. Release to send.</div>
+
+    <div class="log" id="log"></div>
+
+    <div class="deploy-card" id="deployCard">
+      <h2>🚀 Your MVP is live!</h2>
+      <p style="font-size:0.8rem;color:#666;margin-bottom:10px;">Share this link:</p>
+      <a id="deployLink" href="#" target="_blank"></a>
+    </div>
+
+    <button class="reset-btn" id="resetBtn" style="display:none">Start over</button>
+  </div>
+
+  <script>
+    const micBtn    = document.getElementById('micBtn');
+    const micIcon   = document.getElementById('micIcon');
+    const statusEl  = document.getElementById('status');
+    const logEl     = document.getElementById('log');
+    const hintEl    = document.getElementById('hint');
+    const deployCard = document.getElementById('deployCard');
+    const deployLink = document.getElementById('deployLink');
+    const resetBtn  = document.getElementById('resetBtn');
+
+    let mediaRecorder = null;
+    let audioChunks   = [];
+    let stream        = null;
+    let isRecording   = false;
+    let isProcessing  = false;
+    let audioContext  = null;  // unlock autoplay
+
+    function setStatus(msg, type = '') {
+      statusEl.textContent = msg;
+      statusEl.className = 'status-bar' + (type ? ' ' + type : '');
+    }
+
+    function addBubble(text, role) {
+      const div = document.createElement('div');
+      div.className = `bubble ${role}`;
+      div.textContent = text;
+      logEl.appendChild(div);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    // Unlock audio on first interaction (Chrome autoplay policy)
+    function unlockAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    async function getMic() {
+      if (stream) return stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        return stream;
+      } catch (e) {
+        setStatus('Microphone access denied. Check browser permissions.', 'error');
+        throw e;
+      }
+    }
+
+    async function startRecording() {
+      if (isProcessing) return;
+      unlockAudio();
+      setStatus('Listening…', 'active');
+      micBtn.classList.add('recording');
+      micIcon.textContent = '🔴';
+      hintEl.textContent = 'Release to send';
+      isRecording = true;
+      audioChunks = [];
+
+      try {
+        const s = await getMic();
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : 'audio/mp4';
+        mediaRecorder = new MediaRecorder(s, { mimeType });
+        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+        mediaRecorder.start(100);
+      } catch (e) {
+        console.error('Recording error:', e);
+        setStatus('Could not start recording: ' + e.message, 'error');
+        stopRecordingState();
+      }
+    }
+
+    function stopRecordingState() {
+      isRecording = false;
+      micBtn.classList.remove('recording');
+      micIcon.textContent = '🎙️';
+      hintEl.textContent = 'Hold the button while you talk. Release to send.';
+    }
+
+    async function stopRecordingAndSend() {
+      if (!isRecording || !mediaRecorder) return;
+      stopRecordingState();
+
+      // Stop the MediaRecorder and wait for final data
+      await new Promise(resolve => {
+        mediaRecorder.onstop = resolve;
+        mediaRecorder.stop();
+      });
+
+      if (audioChunks.length === 0) {
+        setStatus('No audio captured. Try again.', 'error');
+        return;
+      }
+
+      isProcessing = true;
+      micBtn.classList.add('loading');
+      micIcon.textContent = '⏳';
+      setStatus('Transcribing…', 'active');
+
+      const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+      const formData = new FormData();
+      formData.append('audio', blob, 'recording.webm');
+
+      let data;
+      try {
+        setStatus('Thinking…', 'active');
+        const resp = await fetch('/chat', { method: 'POST', body: formData });
+        if (!resp.ok) {
+          const err = await resp.text();
+          throw new Error(`Server error ${resp.status}: ${err}`);
+        }
+        data = await resp.json();
+      } catch (e) {
+        console.error('Fetch error:', e);
+        setStatus('Error: ' + e.message, 'error');
+        isProcessing = false;
+        micBtn.classList.remove('loading');
+        micIcon.textContent = '🎙️';
+        return;
+      }
+
+      // Show transcript and AI message in log
+      if (data.transcript) addBubble(data.transcript, 'user');
+      if (data.message)    addBubble(data.message, 'ai');
+
+      // Play audio response
+      setStatus('Speaking…', 'active');
+      micBtn.classList.remove('loading');
+      micBtn.classList.add('playing');
+      micIcon.textContent = '🔊';
+
+      await playAudio(data.audio_url);
+
+      micBtn.classList.remove('playing');
+      micIcon.textContent = '🎙️';
+
+      if (data.complete) {
+        if (data.deploy_url) {
+          deployLink.href = data.deploy_url;
+          deployLink.textContent = data.deploy_url;
+          deployCard.classList.add('visible');
+          setStatus('MVP deployed! Your link is ready.', 'active');
+        } else {
+          setStatus('Plan complete — deploy in progress or failed. Check server logs.', 'error');
+        }
+        micBtn.disabled = true;
+        micBtn.style.opacity = '0.4';
+        micBtn.style.cursor = 'not-allowed';
+        resetBtn.style.display = 'block';
+        hintEl.textContent = '';
+      } else {
+        setStatus('Your turn — hold to speak', '');
+      }
+
+      isProcessing = false;
+    }
+
+    function playAudio(url) {
+      return new Promise((resolve, reject) => {
+        const audio = new Audio(url);
+        audio.onended = resolve;
+        audio.onerror = (e) => {
+          console.error('Audio playback error:', e);
+          resolve(); // Don't block on audio error
+        };
+        audio.play().catch(e => {
+          console.error('Audio play() rejected:', e);
+          resolve();
+        });
+      });
+    }
+
+    // Mouse events
+    micBtn.addEventListener('mousedown', e => { e.preventDefault(); startRecording(); });
+    micBtn.addEventListener('mouseup',   e => { e.preventDefault(); stopRecordingAndSend(); });
+    micBtn.addEventListener('mouseleave', e => { if (isRecording) stopRecordingAndSend(); });
+
+    // Touch events (mobile)
+    micBtn.addEventListener('touchstart', e => { e.preventDefault(); startRecording(); }, { passive: false });
+    micBtn.addEventListener('touchend',   e => { e.preventDefault(); stopRecordingAndSend(); }, { passive: false });
+
+    // Reset
+    resetBtn.addEventListener('click', async () => {
+      await fetch('/reset', { method: 'POST' });
+      logEl.innerHTML = '';
+      deployCard.classList.remove('visible');
+      resetBtn.style.display = 'none';
+      micBtn.disabled = false;
+      micBtn.style.opacity = '1';
+      micBtn.style.cursor = 'pointer';
+      hintEl.textContent = 'Hold the button while you talk. Release to send.';
+      setStatus('Press and hold to speak');
+    });
+  </script>
+</body>
+</html>
