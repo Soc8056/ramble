@@ -236,11 +236,17 @@
     }
 
     // Unlock audio on first interaction (Chrome autoplay policy)
-    function unlockAudio() {
-      if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      }
-    }
+  function unlockAudio() {
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      // Play a silent buffer to unlock iOS audio
+      const buf = audioContext.createBuffer(1, 1, 22050);
+      const src = audioContext.createBufferSource();
+      src.buffer = buf;
+      src.connect(audioContext.destination);
+      src.start(0);
+  }
+}
 
     async function getMic() {
       if (stream) return stream;
@@ -363,20 +369,22 @@
       isProcessing = false;
     }
 
-    function playAudio(url) {
-      return new Promise((resolve, reject) => {
-        const audio = new Audio(url);
-        audio.onended = resolve;
-        audio.onerror = (e) => {
-          console.error('Audio playback error:', e);
-          resolve(); // Don't block on audio error
-        };
-        audio.play().catch(e => {
-          console.error('Audio play() rejected:', e);
-          resolve();
-        });
+    async function playAudio(url) {
+      try {
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      return new Promise((resolve) => {
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+        source.onended = resolve;
+        source.start(0);
       });
+    } catch (e) {
+      console.error('Audio playback error:', e);
     }
+  }
 
     // Mouse events
     micBtn.addEventListener('mousedown', e => { e.preventDefault(); startRecording(); });
