@@ -241,7 +241,7 @@ async def generate_and_deploy(spec: dict) -> str | None:
         print(f"Deploying to Vercel as project: {project_name}")
 
         result = subprocess.run(
-            ["vercel", "--yes", "--name", project_name, "--prod"],
+            ["vercel", "--yes", "--name", project_name, "--prod", "--token", os.environ.get("VERCEL_TOKEN", "")],
             cwd=deploy_dir,
             capture_output=True,
             text=True,
