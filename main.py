@@ -237,9 +237,10 @@ async def generate_and_deploy(spec: dict) -> tuple[str | None, str | None]:
         print("Calling Claude builder...")
         gen_response = anthropic_client.messages.create(
             model="claude-sonnet-4-20250514",
-            max_tokens=8096,
+            max_tokens=16000,
             system=BUILDER_SYSTEM,
             messages=[{"role": "user", "content": prompt}],
+            extra_headers={"anthropic-beta": "max-tokens-3-5-sonnet-2024-07-15"},
         )
         raw_output = gen_response.content[0].text.strip()
 
@@ -258,7 +259,18 @@ async def generate_and_deploy(spec: dict) -> tuple[str | None, str | None]:
     except json.JSONDecodeError as e:
         print(f"ERROR parsing builder JSON: {e}")
         print(f"Raw output preview: {raw_output[:500]}")
-        return None, None
+        # Attempt to recover truncated JSON by finding the last complete key-value pair
+        try:
+            last_good = raw_output.rfind('",\n  "')
+            if last_good > 0:
+                trimmed = raw_output[:last_good] + '"\n}'
+                file_map = json.loads(trimmed)
+                print(f"Recovered truncated JSON — {len(file_map)} files")
+            else:
+                return None, None
+        except Exception as e2:
+            print(f"Recovery also failed: {e2}")
+            return None, None
 
     # 3. Get app name from package.json
     app_name = "ramble-app"
