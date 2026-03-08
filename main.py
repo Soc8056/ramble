@@ -240,7 +240,6 @@ async def generate_and_deploy(spec: dict) -> tuple[str | None, str | None]:
             max_tokens=16000,
             system=BUILDER_SYSTEM,
             messages=[{"role": "user", "content": prompt}],
-            extra_headers={"anthropic-beta": "max-tokens-3-5-sonnet-2024-07-15"},
         )
         raw_output = gen_response.content[0].text.strip()
 
@@ -290,6 +289,38 @@ async def generate_and_deploy(spec: dict) -> tuple[str | None, str | None]:
             with open(full_path, "w", encoding="utf-8") as f:
                 f.write(content)
         print(f"Files written to: {project_dir}")
+
+        # Scan for missing imported files and generate stubs
+        # This handles cases where JSON was truncated and some component files are missing
+        import re
+        written_paths = set(file_map.keys())
+        for file_path, content in file_map.items():
+            if not file_path.endswith(('.jsx', '.js', '.tsx', '.ts')):
+                continue
+            imports = re.findall(r"from ['\"](\./[^'\"]+)['\"]", content)
+            for imp in imports:
+                # Resolve the import path relative to the file
+                base_dir = os.path.dirname(file_path)
+                for ext in ['.jsx', '.js', '.tsx', '.ts', '/index.jsx', '/index.js']:
+                    candidate = os.path.normpath(os.path.join(base_dir, imp + ext))
+                    candidate = candidate.replace('\\', '/')
+                    if candidate in written_paths:
+                        break
+                else:
+                    # No matching file found — generate a stub
+                    stub_path = os.path.normpath(
+                        os.path.join(base_dir, imp + '.jsx')
+                    ).replace('\\', '/')
+                    if stub_path not in written_paths:
+                        component_name = os.path.basename(imp)
+                        stub_content = f"export default function {component_name}({{ children }}) {{\n  return <div>{{children}}</div>;\n}}\n"
+                        full_stub = os.path.join(project_dir, stub_path)
+                        os.makedirs(os.path.dirname(full_stub), exist_ok=True)
+                        with open(full_stub, 'w') as f:
+                            f.write(stub_content)
+                        print(f"Generated stub for missing: {stub_path}")
+                        written_paths.add(stub_path)
+
     except Exception as e:
         print(f"ERROR writing project files: {e}")
         shutil.rmtree(project_dir, ignore_errors=True)
