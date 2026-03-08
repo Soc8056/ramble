@@ -2,229 +2,552 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Voice MVP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Ramble" />
+  <meta name="theme-color" content="#0a0a08" />
+  <title>Ramble</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg:        #0a0a08;
+      --bg2:       #111110;
+      --bg3:       #1a1a17;
+      --border:    #242420;
+      --border2:   #2e2e2a;
+      --text:      #e8e8e0;
+      --muted:     #5a5a52;
+      --muted2:    #3a3a34;
+      --accent:    #d4a843;
+      --accent-lo: rgba(212,168,67,0.08);
+      --accent-md: rgba(212,168,67,0.18);
+      --red:       #e05252;
+      --red-lo:    rgba(224,82,82,0.08);
+      --green:     #52a878;
+      --green-lo:  rgba(82,168,120,0.08);
+    }
 
-    body {
-      background: #0a0a0a;
-      color: #f0f0f0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      overscroll-behavior: none;
+    }
+
+    /* Subtle grain overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      min-height: 100svh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 24px;
+      padding: env(safe-area-inset-top, 0px) 24px env(safe-area-inset-bottom, 0px);
+      padding-top: max(env(safe-area-inset-top, 0px), 48px);
+      padding-bottom: max(env(safe-area-inset-bottom, 0px), 48px);
     }
 
-    .container {
+    /* ── HEADER ── */
+    .header {
       width: 100%;
-      max-width: 520px;
+      max-width: 400px;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 56px;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .logo {
+      font-family: 'Instrument Serif', serif;
+      font-size: 1.75rem;
+      font-weight: 400;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    .logo-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-bottom: 4px;
+      flex-shrink: 0;
+    }
+
+    .tagline {
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-left: auto;
+    }
+
+    /* ── MIC AREA ── */
+    .mic-area {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 32px;
+      gap: 28px;
+      margin-bottom: 48px;
+      animation: fadeUp 0.6s 0.1s ease both;
     }
 
-    h1 {
-      font-size: 1.4rem;
-      font-weight: 600;
-      letter-spacing: -0.02em;
-      color: #fff;
-      text-align: center;
+    .mic-wrap {
+      position: relative;
+      width: 140px;
+      height: 140px;
     }
 
-    h1 span {
-      color: #7c3aed;
-    }
-
-    .status-bar {
-      font-size: 0.85rem;
-      color: #666;
-      text-align: center;
-      min-height: 20px;
-      transition: color 0.2s;
-    }
-
-    .status-bar.active { color: #a78bfa; }
-    .status-bar.error  { color: #f87171; }
-
-    /* The big mic button */
-    .mic-btn {
-      width: 120px;
-      height: 120px;
+    /* Animated rings */
+    .ring {
+      position: absolute;
       border-radius: 50%;
-      border: 2px solid #333;
-      background: #111;
+      border: 1px solid transparent;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .ring-1 { width: 160px; height: 160px; }
+    .ring-2 { width: 188px; height: 188px; }
+    .ring-3 { width: 218px; height: 218px; }
+
+    .mic-wrap.recording .ring-1 {
+      border-color: var(--red);
+      opacity: 0.5;
+      animation: ringPulse 1.4s ease-in-out infinite;
+    }
+    .mic-wrap.recording .ring-2 {
+      border-color: var(--red);
+      opacity: 0.25;
+      animation: ringPulse 1.4s 0.2s ease-in-out infinite;
+    }
+    .mic-wrap.recording .ring-3 {
+      border-color: var(--red);
+      opacity: 0.1;
+      animation: ringPulse 1.4s 0.4s ease-in-out infinite;
+    }
+
+    .mic-wrap.playing .ring-1 {
+      border-color: var(--accent);
+      opacity: 0.5;
+      animation: ringPulse 1.8s ease-in-out infinite;
+    }
+    .mic-wrap.playing .ring-2 {
+      border-color: var(--accent);
+      opacity: 0.25;
+      animation: ringPulse 1.8s 0.3s ease-in-out infinite;
+    }
+
+    .mic-wrap.loading .ring-1 {
+      border-color: var(--muted);
+      opacity: 0.4;
+      animation: ringPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes ringPulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: inherit; }
+      50% { transform: translate(-50%, -50%) scale(1.06); opacity: 0.15; }
+    }
+
+    .mic-btn {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border2);
+      background: var(--bg2);
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.15s ease;
+      transition: border-color 0.2s, background 0.2s, transform 0.1s;
       user-select: none;
       -webkit-user-select: none;
-      touch-action: none;
-      position: relative;
+      touch-action: manipulation;
     }
 
-    .mic-btn:hover { border-color: #7c3aed; }
-
-    .mic-btn.recording {
-      border-color: #ef4444;
-      background: #1a0505;
-      box-shadow: 0 0 0 8px rgba(239,68,68,0.15);
-      animation: pulse 1s ease-in-out infinite;
+    .mic-btn:active:not(:disabled) {
+      transform: translate(-50%, -50%) scale(0.96);
     }
 
-    .mic-btn.playing {
-      border-color: #7c3aed;
-      background: #0d0a1a;
-      box-shadow: 0 0 0 8px rgba(124,58,237,0.15);
+    .mic-wrap.recording .mic-btn {
+      border-color: var(--red);
+      background: var(--red-lo);
     }
 
-    .mic-btn.loading {
-      border-color: #444;
+    .mic-wrap.playing .mic-btn {
+      border-color: var(--accent);
+      background: var(--accent-lo);
+      cursor: default;
+    }
+
+    .mic-wrap.loading .mic-btn {
+      border-color: var(--border);
       cursor: wait;
     }
 
-    @keyframes pulse {
-      0%, 100% { box-shadow: 0 0 0 8px rgba(239,68,68,0.15); }
-      50%       { box-shadow: 0 0 0 16px rgba(239,68,68,0.05); }
+    .mic-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
     }
 
-    .mic-icon { font-size: 2.5rem; pointer-events: none; }
+    .mic-glyph {
+      font-size: 2.2rem;
+      pointer-events: none;
+      transition: transform 0.2s;
+    }
+
+    /* ── STATUS ── */
+    .status {
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: center;
+      min-height: 18px;
+      transition: color 0.3s;
+    }
+    .status.active  { color: var(--accent); }
+    .status.error   { color: var(--red); }
+    .status.success { color: var(--green); }
+
+    /* Loading dots */
+    .status.loading::after {
+      content: '';
+      display: inline-block;
+      animation: ellipsis 1.4s steps(4, end) infinite;
+    }
+    @keyframes ellipsis {
+      0%   { content: ''; }
+      25%  { content: '.'; }
+      50%  { content: '..'; }
+      75%  { content: '...'; }
+      100% { content: ''; }
+    }
 
     .hint {
-      font-size: 0.75rem;
-      color: #444;
+      font-size: 0.68rem;
+      color: var(--muted2);
       text-align: center;
+      letter-spacing: 0.04em;
     }
 
-    /* Conversation log */
-    .log {
+    /* ── CONVERSATION LOG ── */
+    .log-wrap {
       width: 100%;
+      max-width: 400px;
+      flex: 1;
+      min-height: 0;
+      animation: fadeUp 0.6s 0.2s ease both;
+    }
+
+    .log {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      max-height: 340px;
+      gap: 10px;
+      max-height: 280px;
       overflow-y: auto;
-      padding-right: 4px;
+      padding-right: 2px;
     }
 
-    .log::-webkit-scrollbar { width: 4px; }
+    .log::-webkit-scrollbar { width: 3px; }
     .log::-webkit-scrollbar-track { background: transparent; }
-    .log::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+    .log::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
     .bubble {
       padding: 10px 14px;
-      border-radius: 12px;
-      font-size: 0.85rem;
-      line-height: 1.5;
-      max-width: 90%;
-      animation: fadeIn 0.2s ease;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      line-height: 1.6;
+      max-width: 88%;
+      animation: fadeUp 0.2s ease both;
+      font-family: 'DM Mono', monospace;
     }
 
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } }
-
     .bubble.user {
-      background: #1a1a2e;
-      border: 1px solid #2d2d4e;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
       align-self: flex-end;
-      color: #c4b5fd;
+      color: var(--accent);
     }
 
     .bubble.ai {
-      background: #111;
-      border: 1px solid #222;
+      background: var(--bg2);
+      border: 1px solid var(--border);
       align-self: flex-start;
-      color: #e5e7eb;
+      color: var(--text);
     }
 
-    /* Deploy result */
+    /* ── DEPLOY CARD ── */
     .deploy-card {
       display: none;
       width: 100%;
-      background: #0d1117;
-      border: 1px solid #238636;
+      max-width: 400px;
+      background: var(--green-lo);
+      border: 1px solid var(--green);
       border-radius: 12px;
-      padding: 20px;
-      text-align: center;
-      animation: fadeIn 0.4s ease;
+      padding: 24px;
+      animation: fadeUp 0.4s ease both;
     }
 
     .deploy-card.visible { display: block; }
 
-    .deploy-card h2 {
-      font-size: 1rem;
-      color: #3fb950;
-      margin-bottom: 8px;
+    .deploy-card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
     }
 
-    .deploy-card a {
-      color: #58a6ff;
+    .deploy-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: blink 2s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .deploy-title {
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--green);
+    }
+
+    .deploy-url {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--text);
       word-break: break-all;
-      font-size: 0.9rem;
+      line-height: 1.5;
+      margin-bottom: 16px;
+      text-decoration: none;
+      border-bottom: 1px solid var(--border2);
+      padding-bottom: 16px;
     }
 
-    .reset-btn {
+    .deploy-url:hover { color: var(--accent); }
+
+    .deploy-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background: var(--green);
+      color: #0a0a08;
+      border: none;
+      font-weight: 500;
+    }
+
+    .btn-primary:hover { opacity: 0.85; }
+
+    .btn-secondary {
       background: transparent;
-      border: 1px solid #333;
-      color: #666;
-      padding: 8px 20px;
+      color: var(--muted);
+      border: 1px solid var(--border2);
+    }
+
+    .btn-secondary:hover { border-color: var(--muted); color: var(--text); }
+
+    /* ── RESET ── */
+    .reset-btn {
+      display: none;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted2);
+      padding: 9px 24px;
       border-radius: 8px;
       cursor: pointer;
-      font-size: 0.8rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
       transition: all 0.15s;
+      animation: fadeUp 0.4s ease both;
     }
 
-    .reset-btn:hover { border-color: #666; color: #aaa; }
+    .reset-btn:hover { border-color: var(--muted); color: var(--muted); }
+
+    /* ── LAYOUT STACK ── */
+    .spacer { flex: 1; }
+
+    .bottom-stack {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      margin-top: 32px;
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── THINKING INDICATOR ── */
+    .thinking-bar {
+      display: none;
+      width: 100%;
+      max-width: 400px;
+      height: 2px;
+      background: var(--border);
+      border-radius: 1px;
+      overflow: hidden;
+    }
+
+    .thinking-bar.visible { display: block; }
+
+    .thinking-bar::after {
+      content: '';
+      display: block;
+      height: 100%;
+      width: 40%;
+      background: var(--accent);
+      border-radius: 1px;
+      animation: shimmer 1.4s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0%   { transform: translateX(-150%); }
+      100% { transform: translateX(350%); }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Voice <span>MVP</span></h1>
+  <div class="app">
 
-    <div class="status-bar" id="status">Press and hold to speak</div>
-
-    <button class="mic-btn" id="micBtn">
-      <span class="mic-icon" id="micIcon">🎙️</span>
-    </button>
-
-    <div class="hint" id="hint">Hold the button while you talk. Release to send.</div>
-
-    <div class="log" id="log"></div>
-
-    <div class="deploy-card" id="deployCard">
-      <h2>🚀 Your MVP is live!</h2>
-      <p style="font-size:0.8rem;color:#666;margin-bottom:10px;">Share this link:</p>
-      <a id="deployLink" href="#" target="_blank"></a>
+    <div class="header">
+      <span class="logo">Ramble</span>
+      <div class="logo-dot"></div>
+      <span class="tagline">Talk · Build · Ship</span>
     </div>
 
-    <button class="reset-btn" id="resetBtn" style="display:none">Start over</button>
+    <div class="mic-area">
+      <div class="mic-wrap" id="micWrap">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <button class="mic-btn" id="micBtn">
+          <span class="mic-glyph" id="micGlyph">🎙️</span>
+        </button>
+      </div>
+
+      <div>
+        <div class="status" id="status">Tap to speak</div>
+      </div>
+
+      <div class="hint" id="hint">Tap once to start · tap again to send</div>
+    </div>
+
+    <div class="thinking-bar" id="thinkingBar"></div>
+
+    <div class="log-wrap">
+      <div class="log" id="log"></div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="bottom-stack">
+      <div class="deploy-card" id="deployCard">
+        <div class="deploy-card-header">
+          <div class="deploy-dot"></div>
+          <span class="deploy-title">Live on Vercel</span>
+        </div>
+        <a class="deploy-url" id="deployLink" href="#" target="_blank"></a>
+        <div class="deploy-actions">
+          <a class="btn btn-primary" id="openBtn" href="#" target="_blank">↗ Open app</a>
+          <a class="btn btn-secondary" id="downloadBtn" href="#" download>↓ Source</a>
+        </div>
+      </div>
+
+      <button class="reset-btn" id="resetBtn">↺ Start over</button>
+    </div>
+
   </div>
 
   <script>
-    const micBtn    = document.getElementById('micBtn');
-    const micIcon   = document.getElementById('micIcon');
-    const statusEl  = document.getElementById('status');
-    const logEl     = document.getElementById('log');
-    const hintEl    = document.getElementById('hint');
-    const deployCard = document.getElementById('deployCard');
-    const deployLink = document.getElementById('deployLink');
-    const resetBtn  = document.getElementById('resetBtn');
+    const micWrap     = document.getElementById('micWrap');
+    const micBtn      = document.getElementById('micBtn');
+    const micGlyph    = document.getElementById('micGlyph');
+    const statusEl    = document.getElementById('status');
+    const hintEl      = document.getElementById('hint');
+    const logEl       = document.getElementById('log');
+    const thinkingBar = document.getElementById('thinkingBar');
+    const deployCard  = document.getElementById('deployCard');
+    const deployLink  = document.getElementById('deployLink');
+    const openBtn     = document.getElementById('openBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const resetBtn    = document.getElementById('resetBtn');
 
     let mediaRecorder = null;
     let audioChunks   = [];
     let stream        = null;
     let isRecording   = false;
     let isProcessing  = false;
-    let audioContext  = null;  // unlock autoplay
+    let audioContext  = null;
+    let currentSessionId = null;
+
+    // ── STATUS HELPERS ──
 
     function setStatus(msg, type = '') {
       statusEl.textContent = msg;
-      statusEl.className = 'status-bar' + (type ? ' ' + type : '');
+      statusEl.className = 'status' + (type ? ' ' + type : '');
+    }
+
+    function setLoading(msg) {
+      statusEl.textContent = msg;
+      statusEl.className = 'status active loading';
+      thinkingBar.classList.add('visible');
+    }
+
+    function clearLoading() {
+      thinkingBar.classList.remove('visible');
     }
 
     function addBubble(text, role) {
@@ -235,18 +558,20 @@
       logEl.scrollTop = logEl.scrollHeight;
     }
 
-    // Unlock audio on first interaction (Chrome autoplay policy)
-  function unlockAudio() {
-    if (!audioContext) {
-      audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      // Play a silent buffer to unlock iOS audio
-      const buf = audioContext.createBuffer(1, 1, 22050);
-      const src = audioContext.createBufferSource();
-      src.buffer = buf;
-      src.connect(audioContext.destination);
-      src.start(0);
-  }
-}
+    // ── AUDIO UNLOCK (iOS) ──
+
+    function unlockAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const buf = audioContext.createBuffer(1, 1, 22050);
+        const src = audioContext.createBufferSource();
+        src.buffer = buf;
+        src.connect(audioContext.destination);
+        src.start(0);
+      }
+    }
+
+    // ── MIC ──
 
     async function getMic() {
       if (stream) return stream;
@@ -254,62 +579,65 @@
         stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
         return stream;
       } catch (e) {
-        setStatus('Microphone access denied. Check browser permissions.', 'error');
+        setStatus('Mic access denied', 'error');
         throw e;
       }
     }
 
+    // ── TAP TO START ──
+
     async function startRecording() {
       if (isProcessing) return;
       unlockAudio();
-      setStatus('Listening…', 'active');
-      micBtn.classList.add('recording');
-      micIcon.textContent = '🔴';
-      hintEl.textContent = 'Release to send';
-      isRecording = true;
-      audioChunks = [];
 
       try {
         const s = await getMic();
         const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
           ? 'audio/webm;codecs=opus'
           : 'audio/mp4';
+
+        audioChunks = [];
         mediaRecorder = new MediaRecorder(s, { mimeType });
         mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
         mediaRecorder.start();
+
+        isRecording = true;
+        micWrap.classList.add('recording');
+        micGlyph.textContent = '⏹';
+        setStatus('Listening', 'active');
+        hintEl.textContent = 'Tap again to send';
       } catch (e) {
         console.error('Recording error:', e);
-        setStatus('Could not start recording: ' + e.message, 'error');
-        stopRecordingState();
+        setStatus('Could not start mic: ' + e.message, 'error');
       }
     }
 
-    function stopRecordingState() {
-      isRecording = false;
-      micBtn.classList.remove('recording');
-      micIcon.textContent = '🎙️';
-      hintEl.textContent = 'Hold the button while you talk. Release to send.';
-    }
+    // ── TAP TO STOP + SEND ──
 
     async function stopRecordingAndSend() {
       if (!isRecording || !mediaRecorder) return;
-      stopRecordingState();
 
-      // Stop the MediaRecorder and wait for final data
+      isRecording = false;
+      micWrap.classList.remove('recording');
+      micGlyph.textContent = '⏳';
+      hintEl.textContent = '';
+
       await new Promise(resolve => {
         mediaRecorder.onstop = resolve;
         mediaRecorder.stop();
       });
 
       if (audioChunks.length === 0) {
-        setStatus('No audio captured. Try again.', 'error');
+        setStatus('Nothing captured — try again', 'error');
+        micGlyph.textContent = '🎙️';
+        hintEl.textContent = 'Tap once to start · tap again to send';
         return;
       }
 
       isProcessing = true;
-      micBtn.classList.add('loading');
-      micIcon.textContent = '⏳';
-      setStatus('Transcribing…', 'active');
+      micBtn.disabled = true;
+      micWrap.classList.add('loading');
+      setLoading('Transcribing');
 
       const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
       const formData = new FormData();
@@ -317,95 +645,120 @@
 
       let data;
       try {
-        setStatus('Thinking…', 'active');
+        setLoading('Thinking');
         const resp = await fetch('/chat', { method: 'POST', body: formData });
         if (!resp.ok) {
           const err = await resp.text();
-          throw new Error(`Server error ${resp.status}: ${err}`);
+          throw new Error(`Server ${resp.status}: ${err}`);
         }
         data = await resp.json();
       } catch (e) {
         console.error('Fetch error:', e);
         setStatus('Error: ' + e.message, 'error');
+        clearLoading();
         isProcessing = false;
-        micBtn.classList.remove('loading');
-        micIcon.textContent = '🎙️';
+        micBtn.disabled = false;
+        micWrap.classList.remove('loading');
+        micGlyph.textContent = '🎙️';
+        hintEl.textContent = 'Tap once to start · tap again to send';
         return;
       }
 
-      // Show transcript and AI message in log
+      clearLoading();
+
       if (data.transcript) addBubble(data.transcript, 'user');
       if (data.message)    addBubble(data.message, 'ai');
 
-      // Play audio response
-      setStatus('Speaking…', 'active');
-      micBtn.classList.remove('loading');
-      micBtn.classList.add('playing');
-      micIcon.textContent = '🔊';
+      // Play response audio
+      micWrap.classList.remove('loading');
+      micWrap.classList.add('playing');
+      micGlyph.textContent = '🔊';
+      setStatus('Speaking', 'active');
 
       await playAudio(data.audio_url);
 
-      micBtn.classList.remove('playing');
-      micIcon.textContent = '🎙️';
+      micWrap.classList.remove('playing');
 
       if (data.complete) {
+        currentSessionId = data.session_id;
+
         if (data.deploy_url) {
           deployLink.href = data.deploy_url;
           deployLink.textContent = data.deploy_url;
+          openBtn.href = data.deploy_url;
+
+          if (currentSessionId) {
+            downloadBtn.href = `/download/${currentSessionId}`;
+          } else {
+            downloadBtn.style.display = 'none';
+          }
+
           deployCard.classList.add('visible');
-          setStatus('MVP deployed! Your link is ready.', 'active');
+          setStatus('Deployed', 'success');
         } else {
-          setStatus('Plan complete — deploy in progress or failed. Check server logs.', 'error');
+          setStatus('Build complete — deploy failed. Check server logs.', 'error');
         }
+
+        micGlyph.textContent = '✓';
         micBtn.disabled = true;
-        micBtn.style.opacity = '0.4';
-        micBtn.style.cursor = 'not-allowed';
-        resetBtn.style.display = 'block';
         hintEl.textContent = '';
+        resetBtn.style.display = 'block';
+
       } else {
-        setStatus('Your turn — hold to speak', '');
+        micGlyph.textContent = '🎙️';
+        micBtn.disabled = false;
+        setStatus('Tap to speak', '');
+        hintEl.textContent = 'Tap once to start · tap again to send';
       }
 
       isProcessing = false;
     }
+
+    // ── AUDIO PLAYBACK ──
 
     async function playAudio(url) {
       try {
         const response = await fetch(url);
         const arrayBuffer = await response.arrayBuffer();
         const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-      return new Promise((resolve) => {
-        const source = audioContext.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(audioContext.destination);
-        source.onended = resolve;
-        source.start(0);
-      });
-    } catch (e) {
-      console.error('Audio playback error:', e);
+        return new Promise(resolve => {
+          const source = audioContext.createBufferSource();
+          source.buffer = audioBuffer;
+          source.connect(audioContext.destination);
+          source.onended = resolve;
+          source.start(0);
+        });
+      } catch (e) {
+        console.error('Audio playback error:', e);
+      }
     }
-  }
 
-    // Mouse events
-    micBtn.addEventListener('mousedown', e => { e.preventDefault(); startRecording(); });
-    micBtn.addEventListener('mouseup',   e => { e.preventDefault(); stopRecordingAndSend(); });
-    micBtn.addEventListener('mouseleave', e => { if (isRecording) stopRecordingAndSend(); });
+    // ── MIC BUTTON TAP ──
 
-    // Touch events (mobile)
-    micBtn.addEventListener('touchstart', e => { e.preventDefault(); startRecording(); }, { passive: false });
-    micBtn.addEventListener('touchend',   e => { e.preventDefault(); stopRecordingAndSend(); }, { passive: false });
+    micBtn.addEventListener('click', () => {
+      if (micBtn.disabled || isProcessing) return;
+      if (isRecording) {
+        stopRecordingAndSend();
+      } else {
+        startRecording();
+      }
+    });
 
-    // Reset
+    // ── RESET ──
+
     resetBtn.addEventListener('click', async () => {
       await fetch('/reset', { method: 'POST' });
       logEl.innerHTML = '';
       deployCard.classList.remove('visible');
       resetBtn.style.display = 'none';
       micBtn.disabled = false;
-      micBtn.style.opacity = '1';
-      micBtn.style.cursor = 'pointer';
-      hintEl.textContent = 'Hold the button while you talk. Release to send.';
-      setStatus('Press and hold to speak');
+      micGlyph.textContent = '🎙️';
+      hintEl.textContent = 'Tap once to start · tap again to send';
+      currentSessionId = null;
+      setStatus('Tap to speak', '');
+      clearLoading();
+      isProcessing = false;
+      isRecording = false;
     });
   </script>
 </body>

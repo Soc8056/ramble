@@ -4,6 +4,7 @@ import uuid
 import subprocess
 import tempfile
 import shutil
+import zipfile
 from pathlib import Path
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -34,56 +35,18 @@ except Exception as e:
 # Single-user in-memory conversation state
 conversation_history = []
 
-ADVISOR_SYSTEM = """You are a senior software architect doing a voice interview to fully understand someone's software idea before building it. You are concise because this is audio — keep every response to 2-3 short sentences maximum.
-
-Your goal is to extract a complete, buildable picture of the product through natural conversation. You need ALL of these before you can mark the spec complete:
-
-1. Core function — what does this app actually do? What is the one thing it accomplishes?
-2. The user — who is using it, what are they doing right before they open this app, what do they need to walk away with?
-3. Key screens or views — what does the user actually see and interact with? Walk through it like you're describing a demo.
-4. Core features — what are the must-have features for this to feel complete? What can be cut?
-5. Data and state — what information does the app need to store, display, or manipulate?
-6. Interactions and flow — how does a user move through the app? What triggers what?
-7. Visual direction — any strong opinions on how it should look or feel? Minimal, dense, playful, serious?
-
-Rules:
-- Ask exactly ONE question per turn. Never stack questions.
-- If an answer is vague, push back ONCE with a more specific question before moving on.
-- You are building this — ask like an engineer who needs to write the code, not a consultant filling out a form.
-- Keep a mental model of what you already know and only ask what you still need.
-- Be direct and collaborative. This is a working session, not an interview.
-- Do NOT mark complete until you have a clear, specific answer for all 7 items above.
-
-YOU MUST RESPOND WITH RAW JSON ONLY. No markdown, no backticks, no explanation. Just the JSON object.
-
-While gathering info:
-{"message": "your 2-3 sentence spoken response with the next question", "complete": false, "spec": null}
-
-Only when ALL 7 items are gathered with specific, buildable answers:
-{"message": "Got it. I have a clear picture of what you want. Give me a moment to build it and get it live.", "complete": true, "spec": {"core_function": "...", "target_user": "...", "key_screens": "...", "core_features": "...", "data_and_state": "...", "interactions_and_flow": "...", "visual_direction": "..."}}"""
+# Store generated session data for download
+# { session_id: { "zip_path": str, "deploy_url": str, "app_name": str } }
+generated_sessions = {}
 
 
-BUILDER_SYSTEM = """You are an expert frontend engineer who builds beautiful, functional single-file web apps. You write clean, modern HTML/CSS/JS. You have strong opinions about design and you execute them precisely."""
+from spec_prompt import ADVISOR_SYSTEM
+from builder_prompt import BUILDER_SYSTEM, BUILDER_USER_TEMPLATE
 
-BUILDER_USER_TEMPLATE = """Build a complete, working single-file web app based on this product spec. This should be a real, functional implementation — not a landing page, not a mockup. The core feature must actually work in the browser using JavaScript.
 
-Product Spec:
-{spec_json}
-
-Requirements:
-1. Invent a great product name that fits the idea
-2. The core feature described in the spec must be fully functional — real interactivity, real state management, real user flows
-3. If the spec requires data persistence, use localStorage
-4. If the spec requires an API the browser can't call, simulate it convincingly with realistic fake data and setTimeout loading states
-5. Navigation between screens/views must work
-6. Use Tailwind CSS from CDN for styling: <script src="https://cdn.tailwindcss.com"></script>
-7. Typography: import one distinctive Google Font that fits the visual direction, use it as the primary font
-8. The design must match the visual direction in the spec — if they said minimal, be minimal; if they said dense or data-heavy, build that
-9. Mobile responsive
-10. A small footer: "[Product Name] · Built with Ramble"
-
-Return ONLY the raw HTML. Start with <!DOCTYPE html>. Zero explanation. Zero markdown."""
-
+# ─────────────────────────────────────────────
+# ROUTES
+# ─────────────────────────────────────────────
 
 @app.get("/")
 async def serve_index():
@@ -97,12 +60,27 @@ async def reset():
     return {"ok": True}
 
 
+@app.get("/download/{session_id}")
+async def download_project(session_id: str):
+    if session_id not in generated_sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+    zip_path = generated_sessions[session_id]["zip_path"]
+    if not os.path.exists(zip_path):
+        raise HTTPException(status_code=404, detail="Zip file not found")
+    app_name = generated_sessions[session_id].get("app_name", "ramble-project")
+    return FileResponse(
+        zip_path,
+        media_type="application/zip",
+        filename=f"{app_name}.zip"
+    )
+
+
 @app.post("/chat")
 async def chat(audio: UploadFile = File(...)):
+
     # 1. Save audio to temp file
     try:
         audio_bytes = await audio.read()
-        # Detect format from magic bytes — don't trust content-type header
         if audio_bytes[:4] == b'fLaC':
             suffix, fname, ftype = ".flac", "audio.flac", "audio/flac"
         elif audio_bytes[4:8] == b'ftyp' or audio_bytes[:4] == b'\x00\x00\x00\x1c':
@@ -114,8 +92,8 @@ async def chat(audio: UploadFile = File(...)):
         elif audio_bytes[:3] == b'ID3' or audio_bytes[:2] == b'\xff\xfb':
             suffix, fname, ftype = ".mp3", "audio.mp3", "audio/mpeg"
         else:
-            # Default to mp4 for iOS Safari which doesn't always set magic bytes right
             suffix, fname, ftype = ".mp4", "audio.mp4", "audio/mp4"
+
         with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
             tmp.write(audio_bytes)
             tmp_path = tmp.name
@@ -124,10 +102,8 @@ async def chat(audio: UploadFile = File(...)):
         print(f"ERROR saving audio: {e}")
         raise HTTPException(status_code=500, detail=f"Audio save error: {e}")
 
-# 2. Transcribe with Whisper
+    # 2. Transcribe with Whisper
     try:
-        # iOS sends fragmented mp4 — send directly to Whisper, it handles mp4 natively
-        # Only convert webm via ffmpeg (Chrome/Firefox)
         if ftype in ("audio/mp4",):
             with open(tmp_path, "rb") as f:
                 transcript = openai_client.audio.transcriptions.create(
@@ -164,7 +140,10 @@ async def chat(audio: UploadFile = File(...)):
         except Exception:
             pass
 
-    # 3. Add user message to history and call Claude
+    if not user_text:
+        raise HTTPException(status_code=400, detail="Empty transcript — no speech detected")
+
+    # 3. Call Claude advisor
     conversation_history.append({"role": "user", "content": user_text})
 
     try:
@@ -181,7 +160,7 @@ async def chat(audio: UploadFile = File(...)):
         conversation_history.pop()
         raise HTTPException(status_code=500, detail=f"Claude error: {e}")
 
-    # 4. Parse Claude's JSON response
+    # 4. Parse advisor JSON
     try:
         clean = raw_text
         if clean.startswith("```"):
@@ -196,10 +175,9 @@ async def chat(audio: UploadFile = File(...)):
     is_complete = data.get("complete", False)
     spec = data.get("spec", None)
 
-    # Add Claude's response to history
     conversation_history.append({"role": "assistant", "content": raw_text})
 
-    # 5. Convert spoken message to TTS
+    # 5. TTS
     try:
         tts_response = openai_client.audio.speech.create(
             model="tts-1",
@@ -214,11 +192,12 @@ async def chat(audio: UploadFile = File(...)):
         print(f"ERROR in TTS: {e}")
         raise HTTPException(status_code=500, detail=f"TTS error: {e}")
 
-    # 6. If spec is complete, generate and deploy app
+    # 6. Generate and deploy if complete
     deploy_url = None
+    session_id = None
     if is_complete and spec:
-        print("SPEC COMPLETE — generating and deploying app...")
-        deploy_url = await generate_and_deploy(spec)
+        print("SPEC COMPLETE — generating React app and deploying...")
+        session_id, deploy_url = await generate_and_deploy(spec)
 
     return JSONResponse({
         "transcript": user_text,
@@ -227,6 +206,7 @@ async def chat(audio: UploadFile = File(...)):
         "complete": is_complete,
         "spec": spec,
         "deploy_url": deploy_url,
+        "session_id": session_id,
     })
 
 
@@ -238,51 +218,163 @@ async def serve_audio(filename: str):
     return FileResponse(path, media_type="audio/mpeg")
 
 
-async def generate_and_deploy(spec: dict) -> str | None:
-    # Generate the app HTML
+# ─────────────────────────────────────────────
+# GENERATE AND DEPLOY
+# ─────────────────────────────────────────────
+
+async def generate_and_deploy(spec: dict) -> tuple[str | None, str | None]:
+    session_id = uuid.uuid4().hex
+    platform = spec.get("platform", "both")
+
+    # 1. Generate full React project as JSON file map
     try:
         spec_json = json.dumps(spec, indent=2)
-        prompt = BUILDER_USER_TEMPLATE.format(spec_json=spec_json)
+        prompt = BUILDER_USER_TEMPLATE.format(
+            spec_json=spec_json,
+            platform=platform
+        )
 
+        print("Calling Claude builder...")
         gen_response = anthropic_client.messages.create(
             model="claude-sonnet-4-20250514",
-            max_tokens=4096,
+            max_tokens=8096,
             system=BUILDER_SYSTEM,
             messages=[{"role": "user", "content": prompt}],
         )
-        html_content = gen_response.content[0].text.strip()
+        raw_output = gen_response.content[0].text.strip()
 
-        if html_content.startswith("```"):
-            html_content = html_content.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+        if raw_output.startswith("```"):
+            raw_output = raw_output.split("\n", 1)[1].rsplit("```", 1)[0].strip()
 
-        print(f"App HTML generated: {len(html_content)} chars")
+        print(f"Builder raw output: {len(raw_output)} chars")
     except Exception as e:
-        print(f"ERROR generating app HTML: {e}")
-        return None
+        print(f"ERROR calling Claude builder: {e}")
+        return None, None
 
-    # Deploy to Vercel
+    # 2. Parse file map
     try:
-        deploy_dir = tempfile.mkdtemp()
-        html_path = os.path.join(deploy_dir, "index.html")
-        with open(html_path, "w", encoding="utf-8") as f:
-            f.write(html_content)
+        file_map = json.loads(raw_output)
+        print(f"Generated {len(file_map)} files: {list(file_map.keys())}")
+    except json.JSONDecodeError as e:
+        print(f"ERROR parsing builder JSON: {e}")
+        print(f"Raw output preview: {raw_output[:500]}")
+        return None, None
 
-        project_name = f"ramble-{uuid.uuid4().hex[:8]}"
-        print(f"Deploying to Vercel as project: {project_name}")
+    # 3. Get app name from package.json
+    app_name = "ramble-app"
+    try:
+        if "package.json" in file_map:
+            pkg = json.loads(file_map["package.json"])
+            app_name = pkg.get("name", "ramble-app")
+    except Exception:
+        pass
 
-        result = subprocess.run(
-            ["vercel", "--yes", "--name", project_name, "--prod", "--token", os.environ.get("VERCEL_TOKEN", "")],
-            cwd=deploy_dir,
+    # 4. Write all files to temp directory
+    project_dir = tempfile.mkdtemp()
+    try:
+        for file_path, content in file_map.items():
+            full_path = os.path.join(project_dir, file_path)
+            os.makedirs(os.path.dirname(full_path), exist_ok=True)
+            with open(full_path, "w", encoding="utf-8") as f:
+                f.write(content)
+        print(f"Files written to: {project_dir}")
+    except Exception as e:
+        print(f"ERROR writing project files: {e}")
+        shutil.rmtree(project_dir, ignore_errors=True)
+        return None, None
+
+    # 5. npm install
+    try:
+        print("Running npm install...")
+        npm_result = subprocess.run(
+            ["npm", "install"],
+            cwd=project_dir,
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+        if npm_result.returncode != 0:
+            print(f"npm install failed:\n{npm_result.stderr[-1000:]}")
+            raise Exception("npm install failed")
+        print("npm install complete")
+    except subprocess.TimeoutExpired:
+        print("ERROR: npm install timed out")
+        shutil.rmtree(project_dir, ignore_errors=True)
+        return None, None
+    except Exception as e:
+        print(f"ERROR in npm install: {e}")
+        shutil.rmtree(project_dir, ignore_errors=True)
+        return None, None
+
+    # 6. vite build
+    try:
+        print("Running vite build...")
+        build_result = subprocess.run(
+            ["npm", "run", "build"],
+            cwd=project_dir,
             capture_output=True,
             text=True,
             timeout=120,
+        )
+        if build_result.returncode != 0:
+            print(f"vite build failed:\nSTDOUT: {build_result.stdout[-500:]}\nSTDERR: {build_result.stderr[-500:]}")
+            raise Exception("vite build failed")
+        print("vite build complete")
+    except subprocess.TimeoutExpired:
+        print("ERROR: vite build timed out")
+        shutil.rmtree(project_dir, ignore_errors=True)
+        return None, None
+    except Exception as e:
+        print(f"ERROR in vite build: {e}")
+        shutil.rmtree(project_dir, ignore_errors=True)
+        return None, None
+
+    # 7. Zip source files for download
+    zip_path = f"/tmp/ramble_{session_id}.zip"
+    try:
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+            for file_path in file_map.keys():
+                full_path = os.path.join(project_dir, file_path)
+                if os.path.exists(full_path):
+                    zf.write(full_path, file_path)
+        print(f"Source zip created: {zip_path}")
+        generated_sessions[session_id] = {
+            "zip_path": zip_path,
+            "app_name": app_name,
+            "deploy_url": None,
+        }
+    except Exception as e:
+        print(f"ERROR creating zip: {e}")
+
+    # 8. Deploy dist/ to Vercel
+    deploy_url = None
+    try:
+        dist_dir = os.path.join(project_dir, "dist")
+        if not os.path.exists(dist_dir):
+            print("ERROR: dist/ not found after build")
+            shutil.rmtree(project_dir, ignore_errors=True)
+            return session_id, None
+
+        project_name = f"ramble-{uuid.uuid4().hex[:8]}"
+        print(f"Deploying dist/ to Vercel as: {project_name}")
+
+        result = subprocess.run(
+            [
+                "vercel", "--yes",
+                "--name", project_name,
+                "--prod",
+                "--token", os.environ.get("VERCEL_TOKEN", ""),
+            ],
+            cwd=dist_dir,
+            capture_output=True,
+            text=True,
+            timeout=300,
         )
 
         print(f"VERCEL STDOUT:\n{result.stdout}")
         if result.stderr:
             print(f"VERCEL STDERR:\n{result.stderr}")
 
-        deploy_url = None
         for line in reversed(result.stdout.strip().split("\n")):
             line = line.strip()
             if line.startswith("https://"):
@@ -291,17 +383,18 @@ async def generate_and_deploy(spec: dict) -> str | None:
 
         if deploy_url:
             print(f"✓ DEPLOYED: {deploy_url}")
-            return deploy_url
+            if session_id in generated_sessions:
+                generated_sessions[session_id]["deploy_url"] = deploy_url
         else:
-            print("WARNING: Could not extract URL from Vercel output")
-            return None
+            print("WARNING: Could not extract deploy URL from Vercel output")
 
     except subprocess.TimeoutExpired:
-        print("ERROR: Vercel deploy timed out after 120s")
-        return None
+        print("ERROR: Vercel deploy timed out after 300s")
     except FileNotFoundError:
-        print("ERROR: 'vercel' command not found — is Vercel CLI installed and in PATH?")
-        return None
+        print("ERROR: vercel CLI not found")
     except Exception as e:
         print(f"ERROR deploying to Vercel: {e}")
-        return None
+    finally:
+        shutil.rmtree(project_dir, ignore_errors=True)
+
+    return session_id, deploy_url
