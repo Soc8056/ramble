@@ -40,726 +40,614 @@
       overscroll-behavior: none;
     }
 
-    /* Subtle grain overlay */
     body::before {
       content: '';
-      position: fixed;
-      inset: 0;
+      position: fixed; inset: 0;
       background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
-      pointer-events: none;
-      z-index: 0;
+      pointer-events: none; z-index: 0;
     }
 
     .app {
-      position: relative;
-      z-index: 1;
+      position: relative; z-index: 1;
       min-height: 100svh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: env(safe-area-inset-top, 0px) 24px env(safe-area-inset-bottom, 0px);
-      padding-top: max(env(safe-area-inset-top, 0px), 48px);
-      padding-bottom: max(env(safe-area-inset-bottom, 0px), 48px);
+      display: flex; flex-direction: column; align-items: center;
+      padding: env(safe-area-inset-top,0) 24px env(safe-area-inset-bottom,0);
+      padding-top: max(env(safe-area-inset-top,0), 48px);
+      padding-bottom: max(env(safe-area-inset-bottom,0), 48px);
     }
 
     /* ── HEADER ── */
     .header {
-      width: 100%;
-      max-width: 400px;
-      display: flex;
-      align-items: baseline;
-      gap: 8px;
-      margin-bottom: 56px;
+      width: 100%; max-width: 400px;
+      display: flex; align-items: baseline; gap: 8px;
+      margin-bottom: 48px;
       animation: fadeUp 0.6s ease both;
     }
+    .logo { font-family: 'Instrument Serif', serif; font-size: 1.75rem; letter-spacing: -0.01em; }
+    .logo-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-bottom: 4px; flex-shrink: 0; }
+    .tagline { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-left: auto; }
 
-    .logo {
-      font-family: 'Instrument Serif', serif;
-      font-size: 1.75rem;
-      font-weight: 400;
-      color: var(--text);
-      letter-spacing: -0.01em;
+    /* ── RESTORE BANNER ── */
+    .restore-banner {
+      display: none;
+      width: 100%; max-width: 400px;
+      background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px;
+      padding: 12px 14px; margin-bottom: 20px;
+      font-size: 0.72rem; color: var(--muted);
+      animation: fadeUp 0.4s ease both;
     }
-
-    .logo-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--accent);
-      margin-bottom: 4px;
-      flex-shrink: 0;
-    }
-
-    .tagline {
-      font-size: 0.65rem;
-      color: var(--muted);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin-left: auto;
-    }
+    .restore-banner.visible { display: flex; align-items: center; gap: 10px; }
+    .restore-banner-text { flex: 1; }
+    .restore-banner-name { color: var(--text); font-weight: 500; }
+    .restore-btn { background: var(--bg3); border: 1px solid var(--border2); color: var(--accent); padding: 6px 12px; border-radius: 6px; font-family: inherit; font-size: 0.68rem; letter-spacing: 0.04em; cursor: pointer; white-space: nowrap; }
+    .restore-btn:hover { background: var(--accent-lo); }
+    .restore-dismiss { background: none; border: none; color: var(--muted2); cursor: pointer; font-size: 1rem; line-height: 1; padding: 2px; }
 
     /* ── MIC AREA ── */
-    .mic-area {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 28px;
-      margin-bottom: 48px;
-      animation: fadeUp 0.6s 0.1s ease both;
-    }
-
-    .mic-wrap {
-      position: relative;
-      width: 140px;
-      height: 140px;
-    }
-
-    /* Animated rings */
-    .ring {
-      position: absolute;
-      border-radius: 50%;
-      border: 1px solid transparent;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      pointer-events: none;
-    }
-
+    .mic-area { display: flex; flex-direction: column; align-items: center; gap: 28px; margin-bottom: 40px; animation: fadeUp 0.6s 0.1s ease both; }
+    .mic-wrap { position: relative; width: 140px; height: 140px; }
+    .ring { position: absolute; border-radius: 50%; border: 1px solid transparent; top: 50%; left: 50%; transform: translate(-50%,-50%); pointer-events: none; }
     .ring-1 { width: 160px; height: 160px; }
     .ring-2 { width: 188px; height: 188px; }
     .ring-3 { width: 218px; height: 218px; }
-
-    .mic-wrap.recording .ring-1 {
-      border-color: var(--red);
-      opacity: 0.5;
-      animation: ringPulse 1.4s ease-in-out infinite;
-    }
-    .mic-wrap.recording .ring-2 {
-      border-color: var(--red);
-      opacity: 0.25;
-      animation: ringPulse 1.4s 0.2s ease-in-out infinite;
-    }
-    .mic-wrap.recording .ring-3 {
-      border-color: var(--red);
-      opacity: 0.1;
-      animation: ringPulse 1.4s 0.4s ease-in-out infinite;
-    }
-
-    .mic-wrap.playing .ring-1 {
-      border-color: var(--accent);
-      opacity: 0.5;
-      animation: ringPulse 1.8s ease-in-out infinite;
-    }
-    .mic-wrap.playing .ring-2 {
-      border-color: var(--accent);
-      opacity: 0.25;
-      animation: ringPulse 1.8s 0.3s ease-in-out infinite;
-    }
-
-    .mic-wrap.loading .ring-1 {
-      border-color: var(--muted);
-      opacity: 0.4;
-      animation: ringPulse 2s ease-in-out infinite;
-    }
-
-    @keyframes ringPulse {
-      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: inherit; }
-      50% { transform: translate(-50%, -50%) scale(1.06); opacity: 0.15; }
-    }
+    .mic-wrap.recording .ring-1 { border-color: var(--red); opacity: 0.5; animation: ringPulse 1.4s ease-in-out infinite; }
+    .mic-wrap.recording .ring-2 { border-color: var(--red); opacity: 0.25; animation: ringPulse 1.4s 0.2s ease-in-out infinite; }
+    .mic-wrap.recording .ring-3 { border-color: var(--red); opacity: 0.1; animation: ringPulse 1.4s 0.4s ease-in-out infinite; }
+    .mic-wrap.playing  .ring-1 { border-color: var(--accent); opacity: 0.5; animation: ringPulse 1.8s ease-in-out infinite; }
+    .mic-wrap.playing  .ring-2 { border-color: var(--accent); opacity: 0.25; animation: ringPulse 1.8s 0.3s ease-in-out infinite; }
+    .mic-wrap.loading  .ring-1 { border-color: var(--muted); opacity: 0.4; animation: ringPulse 2s ease-in-out infinite; }
+    .mic-wrap.editing  .ring-1 { border-color: var(--accent); opacity: 0.5; animation: ringPulse 1.4s ease-in-out infinite; }
+    .mic-wrap.editing  .ring-2 { border-color: var(--accent); opacity: 0.25; animation: ringPulse 1.4s 0.2s ease-in-out infinite; }
+    @keyframes ringPulse { 0%,100%{transform:translate(-50%,-50%) scale(1)} 50%{transform:translate(-50%,-50%) scale(1.06);opacity:0.15} }
 
     .mic-btn {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: 140px;
-      height: 140px;
-      border-radius: 50%;
-      border: 1.5px solid var(--border2);
-      background: var(--bg2);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      width: 140px; height: 140px; border-radius: 50%;
+      border: 1.5px solid var(--border2); background: var(--bg2);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
       transition: border-color 0.2s, background 0.2s, transform 0.1s;
-      user-select: none;
-      -webkit-user-select: none;
-      touch-action: manipulation;
+      user-select: none; touch-action: manipulation;
     }
+    .mic-btn:active:not(:disabled) { transform: translate(-50%,-50%) scale(0.96); }
+    .mic-wrap.recording .mic-btn { border-color: var(--red); background: var(--red-lo); }
+    .mic-wrap.playing   .mic-btn { border-color: var(--accent); background: var(--accent-lo); cursor: default; }
+    .mic-wrap.loading   .mic-btn { border-color: var(--border); cursor: wait; }
+    .mic-wrap.editing   .mic-btn { border-color: var(--accent); background: var(--accent-lo); }
+    .mic-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .mic-glyph { font-size: 2.2rem; pointer-events: none; }
 
-    .mic-btn:active:not(:disabled) {
-      transform: translate(-50%, -50%) scale(0.96);
+    .edit-badge {
+      display: none; position: absolute; top: -8px; right: -8px;
+      background: var(--accent); color: #0a0a08;
+      font-size: 0.55rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 3px 7px; border-radius: 20px;
     }
-
-    .mic-wrap.recording .mic-btn {
-      border-color: var(--red);
-      background: var(--red-lo);
-    }
-
-    .mic-wrap.playing .mic-btn {
-      border-color: var(--accent);
-      background: var(--accent-lo);
-      cursor: default;
-    }
-
-    .mic-wrap.loading .mic-btn {
-      border-color: var(--border);
-      cursor: wait;
-    }
-
-    .mic-btn:disabled {
-      opacity: 0.35;
-      cursor: not-allowed;
-    }
-
-    .mic-glyph {
-      font-size: 2.2rem;
-      pointer-events: none;
-      transition: transform 0.2s;
-    }
+    .mic-wrap.editing .edit-badge { display: block; }
 
     /* ── STATUS ── */
-    .status {
-      font-size: 0.72rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--muted);
-      text-align: center;
-      min-height: 18px;
-      transition: color 0.3s;
-    }
+    .status { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); text-align: center; min-height: 18px; transition: color 0.3s; }
     .status.active  { color: var(--accent); }
     .status.error   { color: var(--red); }
     .status.success { color: var(--green); }
-
-    /* Loading dots */
-    .status.loading::after {
-      content: '';
-      display: inline-block;
-      animation: ellipsis 1.4s steps(4, end) infinite;
-    }
-    @keyframes ellipsis {
-      0%   { content: ''; }
-      25%  { content: '.'; }
-      50%  { content: '..'; }
-      75%  { content: '...'; }
-      100% { content: ''; }
-    }
-
-    .hint {
-      font-size: 0.68rem;
-      color: var(--muted2);
-      text-align: center;
-      letter-spacing: 0.04em;
-    }
+    .status.loading::after { content:''; display:inline-block; animation: ellipsis 1.4s steps(4,end) infinite; }
+    @keyframes ellipsis { 0%{content:''} 25%{content:'.'} 50%{content:'..'} 75%{content:'...'} 100%{content:''} }
+    .hint { font-size: 0.68rem; color: var(--muted2); text-align: center; letter-spacing: 0.04em; }
 
     /* ── CONVERSATION LOG ── */
-    .log-wrap {
-      width: 100%;
-      max-width: 400px;
-      flex: 1;
-      min-height: 0;
-      animation: fadeUp 0.6s 0.2s ease both;
-    }
-
-    .log {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      max-height: 280px;
-      overflow-y: auto;
-      padding-right: 2px;
-    }
-
+    .log-wrap { width: 100%; max-width: 400px; animation: fadeUp 0.6s 0.2s ease both; }
+    .log { display: flex; flex-direction: column; gap: 10px; max-height: 220px; overflow-y: auto; padding-right: 2px; }
     .log::-webkit-scrollbar { width: 3px; }
-    .log::-webkit-scrollbar-track { background: transparent; }
     .log::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+    .bubble { padding: 10px 14px; border-radius: 10px; font-size: 0.78rem; line-height: 1.6; max-width: 88%; animation: fadeUp 0.2s ease both; }
+    .bubble.user { background: var(--bg3); border: 1px solid var(--border2); align-self: flex-end; color: var(--accent); }
+    .bubble.ai   { background: var(--bg2); border: 1px solid var(--border);  align-self: flex-start; color: var(--text); }
 
-    .bubble {
-      padding: 10px 14px;
-      border-radius: 10px;
-      font-size: 0.78rem;
-      line-height: 1.6;
-      max-width: 88%;
-      animation: fadeUp 0.2s ease both;
-      font-family: 'DM Mono', monospace;
-    }
-
-    .bubble.user {
-      background: var(--bg3);
-      border: 1px solid var(--border2);
-      align-self: flex-end;
-      color: var(--accent);
-    }
-
-    .bubble.ai {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      align-self: flex-start;
-      color: var(--text);
-    }
-
-    /* ── DEPLOY CARD ── */
-    .deploy-card {
+    /* ── BUILD PROGRESS ── */
+    .progress-wrap {
       display: none;
-      width: 100%;
-      max-width: 400px;
-      background: var(--green-lo);
-      border: 1px solid var(--green);
-      border-radius: 12px;
-      padding: 24px;
-      animation: fadeUp 0.4s ease both;
+      width: 100%; max-width: 400px;
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+      padding: 16px; margin-top: 12px;
+      animation: fadeUp 0.3s ease both;
     }
-
-    .deploy-card.visible { display: block; }
-
-    .deploy-card-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 16px;
+    .progress-wrap.visible { display: block; }
+    .progress-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .progress-spinner {
+      width: 12px; height: 12px; border-radius: 50%;
+      border: 1.5px solid var(--border2); border-top-color: var(--accent);
+      animation: spin 0.8s linear infinite; flex-shrink: 0;
     }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .progress-spinner.done { border-color: var(--green); border-top-color: var(--green); animation: none; }
+    .progress-title { font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+    .progress-log { display: flex; flex-direction: column; gap: 4px; max-height: 140px; overflow-y: auto; }
+    .progress-log::-webkit-scrollbar { width: 2px; }
+    .progress-log::-webkit-scrollbar-thumb { background: var(--border2); }
+    .progress-line { font-size: 0.7rem; color: var(--muted); line-height: 1.5; }
+    .progress-line.latest { color: var(--text); }
+    .progress-line.error-line { color: var(--red); }
 
-    .deploy-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--green);
-      animation: blink 2s ease-in-out infinite;
-    }
+    /* ── THINKING BAR ── */
+    .thinking-bar { display: none; width: 100%; max-width: 400px; height: 2px; background: var(--border); border-radius: 1px; overflow: hidden; }
+    .thinking-bar.visible { display: block; }
+    .thinking-bar::after { content:''; display:block; height:100%; width:40%; background:var(--accent); border-radius:1px; animation: shimmer 1.4s ease-in-out infinite; }
+    @keyframes shimmer { 0%{transform:translateX(-150%)} 100%{transform:translateX(350%)} }
 
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
-    }
-
-    .deploy-title {
-      font-size: 0.72rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--green);
-    }
-
-    .deploy-url {
-      display: block;
-      font-size: 0.72rem;
-      color: var(--text);
-      word-break: break-all;
-      line-height: 1.5;
-      margin-bottom: 16px;
-      text-decoration: none;
-      border-bottom: 1px solid var(--border2);
-      padding-bottom: 16px;
-    }
-
-    .deploy-url:hover { color: var(--accent); }
-
-    .deploy-actions {
-      display: flex;
-      gap: 10px;
-    }
-
-    .btn {
-      flex: 1;
-      padding: 10px 14px;
-      border-radius: 8px;
-      font-family: 'DM Mono', monospace;
-      font-size: 0.7rem;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: all 0.15s;
-      text-align: center;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-
-    .btn-primary {
-      background: var(--green);
-      color: #0a0a08;
-      border: none;
-      font-weight: 500;
-    }
-
-    .btn-primary:hover { opacity: 0.85; }
-
-    .btn-secondary {
-      background: transparent;
-      color: var(--muted);
-      border: 1px solid var(--border2);
-    }
-
-    .btn-secondary:hover { border-color: var(--muted); color: var(--text); }
-
-    /* ── RESET ── */
-    .reset-btn {
-      display: none;
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--muted2);
-      padding: 9px 24px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-family: 'DM Mono', monospace;
-      font-size: 0.68rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      transition: all 0.15s;
-      animation: fadeUp 0.4s ease both;
-    }
-
-    .reset-btn:hover { border-color: var(--muted); color: var(--muted); }
-
-    /* ── LAYOUT STACK ── */
+    /* ── SPACER ── */
     .spacer { flex: 1; }
 
-    .bottom-stack {
-      width: 100%;
-      max-width: 400px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 16px;
-      margin-top: 32px;
-    }
+    /* ── BOTTOM STACK ── */
+    .bottom-stack { width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 24px; }
 
-    /* ── ANIMATIONS ── */
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(12px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
+    /* ── DEPLOY CARD ── */
+    .deploy-card { display: none; width: 100%; background: var(--green-lo); border: 1px solid var(--green); border-radius: 12px; padding: 20px; animation: fadeUp 0.4s ease both; }
+    .deploy-card.visible { display: block; }
+    .deploy-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+    .deploy-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: blink 2s ease-in-out infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .deploy-title { font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--green); }
+    .deploy-url { display: block; font-size: 0.7rem; color: var(--text); word-break: break-all; line-height: 1.5; margin-bottom: 14px; text-decoration: none; border-bottom: 1px solid var(--border2); padding-bottom: 14px; }
+    .deploy-url:hover { color: var(--accent); }
+    .deploy-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-    /* ── THINKING INDICATOR ── */
-    .thinking-bar {
-      display: none;
-      width: 100%;
-      max-width: 400px;
-      height: 2px;
-      background: var(--border);
-      border-radius: 1px;
-      overflow: hidden;
-    }
+    .btn { flex: 1; min-width: 100px; padding: 9px 12px; border-radius: 8px; font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; transition: all 0.15s; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 5px; }
+    .btn-primary  { background: var(--green); color: #0a0a08; border: none; font-weight: 500; }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-secondary { background: transparent; color: var(--muted); border: 1px solid var(--border2); }
+    .btn-secondary:hover { border-color: var(--muted); color: var(--text); }
+    .btn-edit { background: var(--accent-lo); color: var(--accent); border: 1px solid var(--accent-md); width: 100%; }
+    .btn-edit:hover { background: var(--accent-md); }
 
-    .thinking-bar.visible { display: block; }
+    /* ── RESET ── */
+    .reset-btn { display: none; background: transparent; border: 1px solid var(--border); color: var(--muted2); padding: 9px 24px; border-radius: 8px; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; transition: all 0.15s; }
+    .reset-btn:hover { border-color: var(--muted); color: var(--muted); }
 
-    .thinking-bar::after {
-      content: '';
-      display: block;
-      height: 100%;
-      width: 40%;
-      background: var(--accent);
-      border-radius: 1px;
-      animation: shimmer 1.4s ease-in-out infinite;
-    }
-
-    @keyframes shimmer {
-      0%   { transform: translateX(-150%); }
-      100% { transform: translateX(350%); }
-    }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
   </style>
 </head>
 <body>
-  <div class="app">
+<div class="app">
 
-    <div class="header">
-      <span class="logo">Ramble</span>
-      <div class="logo-dot"></div>
-      <span class="tagline">Talk · Build · Ship</span>
-    </div>
-
-    <div class="mic-area">
-      <div class="mic-wrap" id="micWrap">
-        <div class="ring ring-1"></div>
-        <div class="ring ring-2"></div>
-        <div class="ring ring-3"></div>
-        <button class="mic-btn" id="micBtn">
-          <span class="mic-glyph" id="micGlyph">🎙️</span>
-        </button>
-      </div>
-
-      <div>
-        <div class="status" id="status">Tap to speak</div>
-      </div>
-
-      <div class="hint" id="hint">Tap once to start · tap again to send</div>
-    </div>
-
-    <div class="thinking-bar" id="thinkingBar"></div>
-
-    <div class="log-wrap">
-      <div class="log" id="log"></div>
-    </div>
-
-    <div class="spacer"></div>
-
-    <div class="bottom-stack">
-      <div class="deploy-card" id="deployCard">
-        <div class="deploy-card-header">
-          <div class="deploy-dot"></div>
-          <span class="deploy-title">Live on Vercel</span>
-        </div>
-        <a class="deploy-url" id="deployLink" href="#" target="_blank"></a>
-        <div class="deploy-actions">
-          <a class="btn btn-primary" id="openBtn" href="#" target="_blank">↗ Open app</a>
-          <a class="btn btn-secondary" id="downloadBtn" href="#" download>↓ Source</a>
-        </div>
-      </div>
-
-      <button class="reset-btn" id="resetBtn">↺ Start over</button>
-    </div>
-
+  <div class="header">
+    <span class="logo">Ramble</span>
+    <div class="logo-dot"></div>
+    <span class="tagline">Talk · Build · Ship</span>
   </div>
 
-  <script>
-    const micWrap     = document.getElementById('micWrap');
-    const micBtn      = document.getElementById('micBtn');
-    const micGlyph    = document.getElementById('micGlyph');
-    const statusEl    = document.getElementById('status');
-    const hintEl      = document.getElementById('hint');
-    const logEl       = document.getElementById('log');
-    const thinkingBar = document.getElementById('thinkingBar');
-    const deployCard  = document.getElementById('deployCard');
-    const deployLink  = document.getElementById('deployLink');
-    const openBtn     = document.getElementById('openBtn');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const resetBtn    = document.getElementById('resetBtn');
+  <!-- Session restore banner -->
+  <div class="restore-banner" id="restoreBanner">
+    <div class="restore-banner-text">
+      Continue building <span class="restore-banner-name" id="restoreName"></span>?
+    </div>
+    <button class="restore-btn" id="restoreBtn">Restore</button>
+    <button class="restore-dismiss" id="restoreDismiss">×</button>
+  </div>
 
-    let mediaRecorder = null;
-    let audioChunks   = [];
-    let stream        = null;
-    let isRecording   = false;
-    let isProcessing  = false;
-    let audioContext  = null;
-    let currentSessionId = null;
+  <div class="mic-area">
+    <div class="mic-wrap" id="micWrap">
+      <div class="ring ring-1"></div>
+      <div class="ring ring-2"></div>
+      <div class="ring ring-3"></div>
+      <div class="edit-badge" id="editBadge">Edit mode</div>
+      <button class="mic-btn" id="micBtn">
+        <span class="mic-glyph" id="micGlyph">🎙️</span>
+      </button>
+    </div>
+    <div>
+      <div class="status" id="status">Tap to speak</div>
+    </div>
+    <div class="hint" id="hint">Tap once to start · tap again to send</div>
+  </div>
 
-    // ── STATUS HELPERS ──
+  <div class="thinking-bar" id="thinkingBar"></div>
 
-    function setStatus(msg, type = '') {
-      statusEl.textContent = msg;
-      statusEl.className = 'status' + (type ? ' ' + type : '');
-    }
+  <div class="log-wrap">
+    <div class="log" id="log"></div>
+  </div>
 
-    function setLoading(msg) {
-      statusEl.textContent = msg;
-      statusEl.className = 'status active loading';
-      thinkingBar.classList.add('visible');
-    }
+  <!-- Build progress panel -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-header">
+      <div class="progress-spinner" id="progressSpinner"></div>
+      <span class="progress-title" id="progressTitle">Building your app</span>
+    </div>
+    <div class="progress-log" id="progressLog"></div>
+  </div>
 
-    function clearLoading() {
-      thinkingBar.classList.remove('visible');
-    }
+  <div class="spacer"></div>
 
-    function addBubble(text, role) {
-      const div = document.createElement('div');
-      div.className = `bubble ${role}`;
-      div.textContent = text;
-      logEl.appendChild(div);
-      logEl.scrollTop = logEl.scrollHeight;
-    }
+  <div class="bottom-stack">
+    <div class="deploy-card" id="deployCard">
+      <div class="deploy-card-header">
+        <div class="deploy-dot"></div>
+        <span class="deploy-title" id="deployLabel">Live on Vercel</span>
+      </div>
+      <a class="deploy-url" id="deployLink" href="#" target="_blank"></a>
+      <div class="deploy-actions">
+        <a class="btn btn-primary" id="openBtn" href="#" target="_blank">↗ Open app</a>
+        <a class="btn btn-secondary" id="downloadBtn" href="#">↓ Source</a>
+      </div>
+      <div class="deploy-actions" style="margin-top:8px">
+        <button class="btn btn-edit" id="editBtn">🎙 Request a change</button>
+      </div>
+    </div>
 
-    // ── AUDIO UNLOCK (iOS) ──
+    <button class="reset-btn" id="resetBtn">↺ Start over</button>
+  </div>
 
-    function unlockAudio() {
-      if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const buf = audioContext.createBuffer(1, 1, 22050);
-        const src = audioContext.createBufferSource();
-        src.buffer = buf;
-        src.connect(audioContext.destination);
-        src.start(0);
-      }
-    }
+</div>
 
-    // ── MIC ──
+<script>
+  // ── DOM refs ──────────────────────────────────────────────────────────────
+  const micWrap       = document.getElementById('micWrap');
+  const micBtn        = document.getElementById('micBtn');
+  const micGlyph      = document.getElementById('micGlyph');
+  const statusEl      = document.getElementById('status');
+  const hintEl        = document.getElementById('hint');
+  const logEl         = document.getElementById('log');
+  const thinkingBar   = document.getElementById('thinkingBar');
+  const progressWrap  = document.getElementById('progressWrap');
+  const progressLog   = document.getElementById('progressLog');
+  const progressSpinner = document.getElementById('progressSpinner');
+  const progressTitle = document.getElementById('progressTitle');
+  const deployCard    = document.getElementById('deployCard');
+  const deployLink    = document.getElementById('deployLink');
+  const deployLabel   = document.getElementById('deployLabel');
+  const openBtn       = document.getElementById('openBtn');
+  const downloadBtn   = document.getElementById('downloadBtn');
+  const editBtn       = document.getElementById('editBtn');
+  const resetBtn      = document.getElementById('resetBtn');
+  const restoreBanner = document.getElementById('restoreBanner');
+  const restoreName   = document.getElementById('restoreName');
+  const restoreBtn    = document.getElementById('restoreBtn');
+  const restoreDismiss= document.getElementById('restoreDismiss');
 
-    async function getMic() {
-      if (stream) return stream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-        return stream;
-      } catch (e) {
-        setStatus('Mic access denied', 'error');
-        throw e;
-      }
-    }
+  // ── State ─────────────────────────────────────────────────────────────────
+  let mediaRecorder  = null;
+  let audioChunks    = [];
+  let stream         = null;
+  let isRecording    = false;
+  let isProcessing   = false;
+  let audioContext   = null;
+  let currentSessionId = null;
+  let isEditMode     = false;  // true when user clicked "Request a change"
+  let sseSource      = null;   // active EventSource
 
-    // ── TAP TO START ──
+  // ── Session restore ───────────────────────────────────────────────────────
+  (async function checkRestore() {
+    const lastId = localStorage.getItem('ramble_last_session');
+    if (!lastId) return;
+    try {
+      const res = await fetch(`/sessions/${lastId}`);
+      if (!res.ok) { localStorage.removeItem('ramble_last_session'); return; }
+      const data = await res.json();
+      if (!data.deploy_url) return;
+      restoreName.textContent = data.app_name || 'your last project';
+      restoreBanner.classList.add('visible');
+      restoreBtn._sessionData = data;
+    } catch(e) {}
+  })();
 
-    async function startRecording() {
-      if (isProcessing) return;
-      unlockAudio();
+  restoreBtn.addEventListener('click', () => {
+    const data = restoreBtn._sessionData;
+    if (!data) return;
+    currentSessionId = data.session_id;
+    showDeployCard(data.deploy_url, data.session_id, true);
+    restoreBanner.classList.remove('visible');
+  });
 
-      try {
-        const s = await getMic();
-        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-          ? 'audio/webm;codecs=opus'
-          : 'audio/mp4';
+  restoreDismiss.addEventListener('click', () => {
+    restoreBanner.classList.remove('visible');
+    localStorage.removeItem('ramble_last_session');
+  });
 
-        audioChunks = [];
-        mediaRecorder = new MediaRecorder(s, { mimeType });
-        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
-        mediaRecorder.start();
+  // ── Status helpers ────────────────────────────────────────────────────────
+  function setStatus(msg, type = '') {
+    statusEl.textContent = msg;
+    statusEl.className   = 'status' + (type ? ' ' + type : '');
+  }
+  function setLoading(msg) {
+    statusEl.textContent = msg;
+    statusEl.className   = 'status active loading';
+    thinkingBar.classList.add('visible');
+  }
+  function clearLoading() { thinkingBar.classList.remove('visible'); }
 
-        isRecording = true;
-        micWrap.classList.add('recording');
-        micGlyph.textContent = '⏹';
-        setStatus('Listening', 'active');
-        hintEl.textContent = 'Tap again to send';
-      } catch (e) {
-        console.error('Recording error:', e);
-        setStatus('Could not start mic: ' + e.message, 'error');
-      }
-    }
+  function addBubble(text, role) {
+    const d = document.createElement('div');
+    d.className   = `bubble ${role}`;
+    d.textContent = text;
+    logEl.appendChild(d);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
 
-    // ── TAP TO STOP + SEND ──
+  // ── Progress panel ────────────────────────────────────────────────────────
+  function showProgress(title) {
+    progressWrap.classList.add('visible');
+    progressTitle.textContent = title || 'Building your app';
+    progressSpinner.classList.remove('done');
+    progressLog.innerHTML = '';
+  }
 
-    async function stopRecordingAndSend() {
-      if (!isRecording || !mediaRecorder) return;
+  function addProgressLine(msg, isError = false) {
+    // De-emphasise previous "latest"
+    const prev = progressLog.querySelector('.latest');
+    if (prev) prev.classList.remove('latest');
 
-      isRecording = false;
-      micWrap.classList.remove('recording');
-      micGlyph.textContent = '⏳';
-      hintEl.textContent = '';
+    const line = document.createElement('div');
+    line.className   = 'progress-line latest' + (isError ? ' error-line' : '');
+    line.textContent = msg;
+    progressLog.appendChild(line);
+    progressLog.scrollTop = progressLog.scrollHeight;
+  }
 
-      await new Promise(resolve => {
-        mediaRecorder.onstop = resolve;
-        mediaRecorder.stop();
-      });
+  function finishProgress() {
+    progressSpinner.classList.add('done');
+    progressTitle.textContent = 'Build complete';
+  }
 
-      if (audioChunks.length === 0) {
-        setStatus('Nothing captured — try again', 'error');
-        micGlyph.textContent = '🎙️';
-        hintEl.textContent = 'Tap once to start · tap again to send';
-        return;
-      }
+  // ── SSE – stream build progress ───────────────────────────────────────────
+  function connectSSE(sessionId, isEdit = false) {
+    if (sseSource) { sseSource.close(); sseSource = null; }
 
-      isProcessing = true;
-      micBtn.disabled = true;
-      micWrap.classList.add('loading');
-      setLoading('Transcribing');
+    showProgress(isEdit ? 'Updating your app' : 'Building your app');
+    micBtn.disabled = true;
 
-      const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
-      const formData = new FormData();
-      formData.append('audio', blob, 'recording.webm');
+    sseSource = new EventSource(`/progress/${sessionId}`);
 
-      let data;
-      try {
-        setLoading('Thinking');
-        const resp = await fetch('/chat', { method: 'POST', body: formData });
-        if (!resp.ok) {
-          const err = await resp.text();
-          throw new Error(`Server ${resp.status}: ${err}`);
-        }
-        data = await resp.json();
-      } catch (e) {
-        console.error('Fetch error:', e);
-        setStatus('Error: ' + e.message, 'error');
-        clearLoading();
-        isProcessing = false;
+    sseSource.onmessage = (evt) => {
+      const event = JSON.parse(evt.data);
+
+      if (event.type === 'progress') {
+        addProgressLine(event.msg);
+
+      } else if (event.type === 'done') {
+        finishProgress();
+        sseSource.close(); sseSource = null;
+        const url = event.deploy_url;
+        const sid = event.session_id || sessionId;
+        showDeployCard(url, sid, isEdit);
         micBtn.disabled = false;
-        micWrap.classList.remove('loading');
+
+      } else if (event.type === 'error') {
+        addProgressLine(event.msg, true);
+        progressSpinner.classList.add('done');
+        progressTitle.textContent = 'Build failed';
+        setStatus('Build failed — tap to try again', 'error');
+        sseSource.close(); sseSource = null;
+        micBtn.disabled = false;
         micGlyph.textContent = '🎙️';
-        hintEl.textContent = 'Tap once to start · tap again to send';
-        return;
-      }
-
-      clearLoading();
-
-      if (data.transcript) addBubble(data.transcript, 'user');
-      if (data.message)    addBubble(data.message, 'ai');
-
-      // Play response audio
-      micWrap.classList.remove('loading');
-      micWrap.classList.add('playing');
-      micGlyph.textContent = '🔊';
-      setStatus('Speaking', 'active');
-
-      await playAudio(data.audio_url);
-
-      micWrap.classList.remove('playing');
-
-      if (data.complete) {
-        currentSessionId = data.session_id;
-
-        if (data.deploy_url) {
-          deployLink.href = data.deploy_url;
-          deployLink.textContent = data.deploy_url;
-          openBtn.href = data.deploy_url;
-
-          if (currentSessionId) {
-            downloadBtn.href = `/download/${currentSessionId}`;
-          } else {
-            downloadBtn.style.display = 'none';
-          }
-
-          deployCard.classList.add('visible');
-          setStatus('Deployed', 'success');
-        } else {
-          setStatus('Build complete — deploy failed. Check server logs.', 'error');
-        }
-
-        micGlyph.textContent = '✓';
-        micBtn.disabled = true;
-        hintEl.textContent = '';
         resetBtn.style.display = 'block';
+      }
+    };
 
-      } else {
-        micGlyph.textContent = '🎙️';
+    sseSource.onerror = () => {
+      sseSource.close(); sseSource = null;
+      if (!deployCard.classList.contains('visible')) {
+        addProgressLine('Connection lost — check server logs', true);
+        setStatus('Connection error', 'error');
         micBtn.disabled = false;
-        setStatus('Tap to speak', '');
-        hintEl.textContent = 'Tap once to start · tap again to send';
       }
+    };
+  }
 
-      isProcessing = false;
+  function showDeployCard(url, sessionId, isEdit = false) {
+    currentSessionId = sessionId;
+    localStorage.setItem('ramble_last_session', sessionId);
+
+    deployLink.href        = url;
+    deployLink.textContent = url;
+    openBtn.href           = url;
+    downloadBtn.href       = `/download/${sessionId}`;
+    deployLabel.textContent = isEdit ? 'Updated on Vercel' : 'Live on Vercel';
+    deployCard.classList.add('visible');
+
+    setStatus(isEdit ? 'Updated ✓' : 'Deployed ✓', 'success');
+    micGlyph.textContent = '✓';
+    hintEl.textContent   = '';
+    resetBtn.style.display = 'block';
+  }
+
+  // ── Mic ───────────────────────────────────────────────────────────────────
+  function unlockAudio() {
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const buf = audioContext.createBuffer(1, 1, 22050);
+      const src = audioContext.createBufferSource();
+      src.buffer = buf; src.connect(audioContext.destination); src.start(0);
+    }
+  }
+
+  async function getMic() {
+    if (stream) return stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      return stream;
+    } catch(e) {
+      setStatus('Mic access denied', 'error');
+      throw e;
+    }
+  }
+
+  async function startRecording() {
+    if (isProcessing) return;
+    unlockAudio();
+    try {
+      const s = await getMic();
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus' : 'audio/mp4';
+      audioChunks  = [];
+      mediaRecorder = new MediaRecorder(s, { mimeType });
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+      mediaRecorder.start();
+      isRecording = true;
+
+      micWrap.classList.remove('loading', 'playing');
+      micWrap.classList.add(isEditMode ? 'editing' : 'recording');
+      micGlyph.textContent = '⏹';
+      setStatus(isEditMode ? 'Listening (edit mode)' : 'Listening', 'active');
+      hintEl.textContent   = 'Tap again to send';
+    } catch(e) {
+      setStatus('Could not start mic', 'error');
+    }
+  }
+
+  async function stopAndSend() {
+    if (!isRecording || !mediaRecorder) return;
+    isRecording = false;
+    micWrap.classList.remove('recording', 'editing');
+    micGlyph.textContent = '⏳';
+    hintEl.textContent   = '';
+
+    await new Promise(r => { mediaRecorder.onstop = r; mediaRecorder.stop(); });
+
+    if (!audioChunks.length) {
+      setStatus('Nothing captured — try again', 'error');
+      resetMic();
+      return;
     }
 
-    // ── AUDIO PLAYBACK ──
+    isProcessing    = true;
+    micBtn.disabled = true;
+    micWrap.classList.add('loading');
+    setLoading('Transcribing');
 
-    async function playAudio(url) {
-      try {
-        const response = await fetch(url);
-        const arrayBuffer = await response.arrayBuffer();
-        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-        return new Promise(resolve => {
-          const source = audioContext.createBufferSource();
-          source.buffer = audioBuffer;
-          source.connect(audioContext.destination);
-          source.onended = resolve;
-          source.start(0);
-        });
-      } catch (e) {
-        console.error('Audio playback error:', e);
-      }
-    }
+    const blob     = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+    const formData = new FormData();
+    formData.append('audio', blob, 'recording.webm');
 
-    // ── MIC BUTTON TAP ──
-
-    micBtn.addEventListener('click', () => {
-      if (micBtn.disabled || isProcessing) return;
-      if (isRecording) {
-        stopRecordingAndSend();
-      } else {
-        startRecording();
-      }
-    });
-
-    // ── RESET ──
-
-    resetBtn.addEventListener('click', async () => {
-      await fetch('/reset', { method: 'POST' });
-      logEl.innerHTML = '';
-      deployCard.classList.remove('visible');
-      resetBtn.style.display = 'none';
-      micBtn.disabled = false;
-      micGlyph.textContent = '🎙️';
-      hintEl.textContent = 'Tap once to start · tap again to send';
-      currentSessionId = null;
-      setStatus('Tap to speak', '');
+    let data;
+    try {
+      setLoading('Thinking');
+      const endpoint = isEditMode ? `/edit?session_id=${currentSessionId}` : '/chat';
+      const res = await fetch(endpoint, { method: 'POST', body: formData });
+      if (!res.ok) throw new Error(`Server ${res.status}: ${await res.text()}`);
+      data = await res.json();
+    } catch(e) {
+      setStatus('Error: ' + e.message, 'error');
       clearLoading();
-      isProcessing = false;
-      isRecording = false;
-    });
-  </script>
+      isProcessing    = false;
+      micBtn.disabled = false;
+      micWrap.classList.remove('loading');
+      resetMic();
+      return;
+    }
+
+    clearLoading();
+    if (data.transcript) addBubble(data.transcript, 'user');
+    if (data.message)    addBubble(data.message,    'ai');
+
+    micWrap.classList.remove('loading');
+    micWrap.classList.add('playing');
+    micGlyph.textContent = '🔊';
+    setStatus('Speaking', 'active');
+    await playAudio(data.audio_url);
+    micWrap.classList.remove('playing');
+
+    // ── Handle /chat response ─────────────────────────────────────────────
+    if (!isEditMode) {
+      if (data.complete && data.session_id) {
+        // Spec complete — build started in background, connect SSE
+        currentSessionId = data.session_id;
+        micGlyph.textContent = '⏳';
+        setStatus('Building', 'active');
+        connectSSE(data.session_id, false);
+        // micBtn stays disabled until SSE 'done' fires
+        isProcessing = false;
+        return;
+      }
+    }
+
+    // ── Handle /edit response ─────────────────────────────────────────────
+    if (isEditMode) {
+      if (data.ready && data.session_id) {
+        // Edit confirmed — rebuild started
+        setStatus('Updating', 'active');
+        connectSSE(data.session_id, true);
+        isEditMode = false;
+        micWrap.classList.remove('editing');
+        isProcessing = false;
+        return;
+      } else if (data.needs_clarify) {
+        // Need one more turn of clarification
+        resetMic();
+        isProcessing = false;
+        return;
+      }
+    }
+
+    // Default: continue conversation
+    resetMic();
+    isProcessing = false;
+  }
+
+  function resetMic() {
+    micGlyph.textContent = isEditMode ? '✏️' : '🎙️';
+    micBtn.disabled      = false;
+    setStatus(isEditMode ? 'Describe your change' : 'Tap to speak', '');
+    hintEl.textContent   = 'Tap once to start · tap again to send';
+    micWrap.classList.remove('loading', 'recording', 'playing', 'editing');
+    if (isEditMode) micWrap.classList.add('editing');
+  }
+
+  // ── Audio playback ────────────────────────────────────────────────────────
+  async function playAudio(url) {
+    try {
+      const res    = await fetch(url);
+      const buf    = await res.arrayBuffer();
+      const decoded = await audioContext.decodeAudioData(buf);
+      return new Promise(resolve => {
+        const src = audioContext.createBufferSource();
+        src.buffer  = decoded;
+        src.connect(audioContext.destination);
+        src.onended = resolve;
+        src.start(0);
+      });
+    } catch(e) { console.warn('Audio playback error:', e); }
+  }
+
+  // ── Mic button ────────────────────────────────────────────────────────────
+  micBtn.addEventListener('click', () => {
+    if (micBtn.disabled || isProcessing) return;
+    if (isRecording) stopAndSend();
+    else             startRecording();
+  });
+
+  // ── Edit button ───────────────────────────────────────────────────────────
+  editBtn.addEventListener('click', () => {
+    if (!currentSessionId) return;
+    isEditMode = true;
+    micWrap.classList.add('editing');
+    micGlyph.textContent = '✏️';
+    micBtn.disabled      = false;
+    setStatus('Describe your change', 'active');
+    hintEl.textContent   = 'Tap to record · tap again to send';
+    deployCard.classList.remove('visible');
+    progressWrap.classList.remove('visible');
+    resetBtn.style.display = 'none';
+  });
+
+  // ── Reset ─────────────────────────────────────────────────────────────────
+  resetBtn.addEventListener('click', async () => {
+    if (sseSource) { sseSource.close(); sseSource = null; }
+    await fetch('/reset', { method: 'POST' });
+    logEl.innerHTML = '';
+    deployCard.classList.remove('visible');
+    progressWrap.classList.remove('visible');
+    progressLog.innerHTML = '';
+    resetBtn.style.display = 'none';
+    isEditMode = false;
+    currentSessionId = null;
+    localStorage.removeItem('ramble_last_session');
+    micBtn.disabled      = false;
+    micGlyph.textContent = '🎙️';
+    hintEl.textContent   = 'Tap once to start · tap again to send';
+    setStatus('Tap to speak', '');
+    clearLoading();
+    isProcessing = false;
+    isRecording  = false;
+    micWrap.className = 'mic-wrap';
+  });
+</script>
 </body>
 </html>
