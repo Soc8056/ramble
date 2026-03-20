@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Ramble" />
   <meta name="theme-color" content="#0a0a08" />
   <title>Ramble</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -13,196 +12,133 @@
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg:        #0a0a08;
-      --bg2:       #111110;
-      --bg3:       #1a1a17;
-      --border:    #242420;
-      --border2:   #2e2e2a;
-      --text:      #e8e8e0;
-      --muted:     #5a5a52;
-      --muted2:    #3a3a34;
-      --accent:    #d4a843;
-      --accent-lo: rgba(212,168,67,0.08);
-      --accent-md: rgba(212,168,67,0.18);
-      --red:       #e05252;
-      --red-lo:    rgba(224,82,82,0.08);
-      --green:     #52a878;
-      --green-lo:  rgba(82,168,120,0.08);
+      --bg: #0a0a08; --bg2: #111110; --bg3: #1a1a17;
+      --border: #242420; --border2: #2e2e2a;
+      --text: #e8e8e0; --muted: #5a5a52; --muted2: #3a3a34;
+      --accent: #d4a843; --accent-lo: rgba(212,168,67,0.08); --accent-md: rgba(212,168,67,0.18);
+      --red: #e05252; --red-lo: rgba(224,82,82,0.08);
+      --green: #52a878; --green-lo: rgba(82,168,120,0.08);
     }
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body { height:100%; background:var(--bg); color:var(--text); font-family:'DM Mono',monospace; overscroll-behavior:none; }
+    body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E"); pointer-events:none; z-index:0; }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-    html, body {
-      height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'DM Mono', monospace;
-      overscroll-behavior: none;
-    }
-
-    body::before {
-      content: '';
-      position: fixed; inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
-      pointer-events: none; z-index: 0;
-    }
-
-    .app {
-      position: relative; z-index: 1;
-      min-height: 100svh;
-      display: flex; flex-direction: column; align-items: center;
-      padding: env(safe-area-inset-top,0) 24px env(safe-area-inset-bottom,0);
-      padding-top: max(env(safe-area-inset-top,0), 48px);
-      padding-bottom: max(env(safe-area-inset-bottom,0), 48px);
-    }
+    .app { position:relative; z-index:1; min-height:100svh; display:flex; flex-direction:column; align-items:center; padding:env(safe-area-inset-top,0) 24px env(safe-area-inset-bottom,0); padding-top:max(env(safe-area-inset-top,0),48px); padding-bottom:max(env(safe-area-inset-bottom,0),48px); }
 
     /* ── HEADER ── */
-    .header {
-      width: 100%; max-width: 400px;
-      display: flex; align-items: baseline; gap: 8px;
-      margin-bottom: 48px;
-      animation: fadeUp 0.6s ease both;
-    }
-    .logo { font-family: 'Instrument Serif', serif; font-size: 1.75rem; letter-spacing: -0.01em; }
-    .logo-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-bottom: 4px; flex-shrink: 0; }
-    .tagline { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-left: auto; }
+    .header { width:100%; max-width:400px; display:flex; align-items:center; gap:8px; margin-bottom:36px; animation:fadeUp 0.6s ease both; }
+    .logo { font-family:'Instrument Serif',serif; font-size:1.75rem; letter-spacing:-0.01em; }
+    .logo-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0; }
+    .tagline { font-size:0.65rem; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase; }
+    .header-right { margin-left:auto; display:flex; align-items:center; gap:8px; }
 
-    /* ── RESTORE BANNER ── */
-    .restore-banner {
-      display: none;
-      width: 100%; max-width: 400px;
-      background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px;
-      padding: 12px 14px; margin-bottom: 20px;
-      font-size: 0.72rem; color: var(--muted);
-      animation: fadeUp 0.4s ease both;
-    }
-    .restore-banner.visible { display: flex; align-items: center; gap: 10px; }
-    .restore-banner-text { flex: 1; }
-    .restore-banner-name { color: var(--text); font-weight: 500; }
-    .restore-btn { background: var(--bg3); border: 1px solid var(--border2); color: var(--accent); padding: 6px 12px; border-radius: 6px; font-family: inherit; font-size: 0.68rem; letter-spacing: 0.04em; cursor: pointer; white-space: nowrap; }
-    .restore-btn:hover { background: var(--accent-lo); }
-    .restore-dismiss { background: none; border: none; color: var(--muted2); cursor: pointer; font-size: 1rem; line-height: 1; padding: 2px; }
+    /* ── AUTH AREA ── */
+    .auth-btn { background:var(--bg2); border:1px solid var(--border2); color:var(--muted); padding:6px 12px; border-radius:7px; font-family:inherit; font-size:0.68rem; letter-spacing:0.04em; cursor:pointer; display:flex; align-items:center; gap:6px; text-decoration:none; transition:all 0.15s; }
+    .auth-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .auth-btn.primary { background:var(--accent-lo); border-color:var(--accent-md); color:var(--accent); }
+
+    .user-pill { display:flex; align-items:center; gap:6px; }
+    .avatar { width:24px; height:24px; border-radius:50%; border:1px solid var(--border2); }
+    .user-login { font-size:0.68rem; color:var(--muted); }
+    .projects-btn { background:none; border:none; color:var(--muted2); font-size:0.68rem; font-family:inherit; cursor:pointer; padding:2px 6px; border-radius:4px; transition:all 0.15s; }
+    .projects-btn:hover { color:var(--text); background:var(--bg3); }
+    .logout-btn { background:none; border:none; color:var(--muted2); font-size:0.9rem; cursor:pointer; padding:2px; line-height:1; }
+    .logout-btn:hover { color:var(--red); }
+
+    /* ── VERCEL CONNECT BANNER ── */
+    .vercel-banner { display:none; width:100%; max-width:400px; background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:16px; font-size:0.72rem; color:var(--muted); animation:fadeUp 0.4s ease both; align-items:center; gap:10px; }
+    .vercel-banner.visible { display:flex; }
+    .vercel-banner-text { flex:1; }
+    .vercel-connect-btn { background:var(--bg3); border:1px solid var(--border2); color:var(--text); padding:6px 10px; border-radius:6px; font-family:inherit; font-size:0.66rem; cursor:pointer; text-decoration:none; white-space:nowrap; }
+    .vercel-connect-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .vercel-dismiss { background:none; border:none; color:var(--muted2); cursor:pointer; font-size:1rem; }
+
+    /* ── PROJECTS PANEL ── */
+    .projects-panel { display:none; position:fixed; top:0; right:0; bottom:0; width:280px; background:var(--bg2); border-left:1px solid var(--border); z-index:100; overflow-y:auto; padding:24px 16px; animation:slideIn 0.2s ease both; }
+    .projects-panel.open { display:block; }
+    @keyframes slideIn { from{transform:translateX(20px);opacity:0} to{transform:translateX(0);opacity:1} }
+    .panel-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+    .panel-title { font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); }
+    .panel-close { background:none; border:none; color:var(--muted2); cursor:pointer; font-size:1.1rem; }
+    .project-item { padding:10px 12px; border-radius:8px; border:1px solid var(--border); margin-bottom:8px; cursor:pointer; transition:all 0.15s; }
+    .project-item:hover { border-color:var(--border2); background:var(--bg3); }
+    .project-name { font-size:0.78rem; color:var(--text); margin-bottom:3px; }
+    .project-url { font-size:0.65rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .project-date { font-size:0.62rem; color:var(--muted2); margin-top:4px; }
+    .no-projects { font-size:0.72rem; color:var(--muted2); text-align:center; padding:24px 0; }
 
     /* ── MIC AREA ── */
-    .mic-area { display: flex; flex-direction: column; align-items: center; gap: 28px; margin-bottom: 40px; animation: fadeUp 0.6s 0.1s ease both; }
-    .mic-wrap { position: relative; width: 140px; height: 140px; }
-    .ring { position: absolute; border-radius: 50%; border: 1px solid transparent; top: 50%; left: 50%; transform: translate(-50%,-50%); pointer-events: none; }
-    .ring-1 { width: 160px; height: 160px; }
-    .ring-2 { width: 188px; height: 188px; }
-    .ring-3 { width: 218px; height: 218px; }
-    .mic-wrap.recording .ring-1 { border-color: var(--red); opacity: 0.5; animation: ringPulse 1.4s ease-in-out infinite; }
-    .mic-wrap.recording .ring-2 { border-color: var(--red); opacity: 0.25; animation: ringPulse 1.4s 0.2s ease-in-out infinite; }
-    .mic-wrap.recording .ring-3 { border-color: var(--red); opacity: 0.1; animation: ringPulse 1.4s 0.4s ease-in-out infinite; }
-    .mic-wrap.playing  .ring-1 { border-color: var(--accent); opacity: 0.5; animation: ringPulse 1.8s ease-in-out infinite; }
-    .mic-wrap.playing  .ring-2 { border-color: var(--accent); opacity: 0.25; animation: ringPulse 1.8s 0.3s ease-in-out infinite; }
-    .mic-wrap.loading  .ring-1 { border-color: var(--muted); opacity: 0.4; animation: ringPulse 2s ease-in-out infinite; }
-    .mic-wrap.editing  .ring-1 { border-color: var(--accent); opacity: 0.5; animation: ringPulse 1.4s ease-in-out infinite; }
-    .mic-wrap.editing  .ring-2 { border-color: var(--accent); opacity: 0.25; animation: ringPulse 1.4s 0.2s ease-in-out infinite; }
-    @keyframes ringPulse { 0%,100%{transform:translate(-50%,-50%) scale(1)} 50%{transform:translate(-50%,-50%) scale(1.06);opacity:0.15} }
+    .mic-area { display:flex; flex-direction:column; align-items:center; gap:28px; margin-bottom:36px; animation:fadeUp 0.6s 0.1s ease both; }
+    .mic-wrap { position:relative; width:140px; height:140px; }
+    .ring { position:absolute; border-radius:50%; border:1px solid transparent; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; }
+    .ring-1{width:160px;height:160px} .ring-2{width:188px;height:188px} .ring-3{width:218px;height:218px}
+    .mic-wrap.recording .ring-1{border-color:var(--red);opacity:0.5;animation:ringPulse 1.4s ease-in-out infinite}
+    .mic-wrap.recording .ring-2{border-color:var(--red);opacity:0.25;animation:ringPulse 1.4s 0.2s ease-in-out infinite}
+    .mic-wrap.recording .ring-3{border-color:var(--red);opacity:0.1;animation:ringPulse 1.4s 0.4s ease-in-out infinite}
+    .mic-wrap.playing .ring-1{border-color:var(--accent);opacity:0.5;animation:ringPulse 1.8s ease-in-out infinite}
+    .mic-wrap.playing .ring-2{border-color:var(--accent);opacity:0.25;animation:ringPulse 1.8s 0.3s ease-in-out infinite}
+    .mic-wrap.loading .ring-1{border-color:var(--muted);opacity:0.4;animation:ringPulse 2s ease-in-out infinite}
+    @keyframes ringPulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.06);opacity:0.15}}
+    .mic-btn { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:140px; height:140px; border-radius:50%; border:1.5px solid var(--border2); background:var(--bg2); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:border-color 0.2s,background 0.2s,transform 0.1s; user-select:none; touch-action:manipulation; }
+    .mic-btn:active:not(:disabled){transform:translate(-50%,-50%) scale(0.96)}
+    .mic-wrap.recording .mic-btn{border-color:var(--red);background:var(--red-lo)}
+    .mic-wrap.playing .mic-btn{border-color:var(--accent);background:var(--accent-lo);cursor:default}
+    .mic-wrap.loading .mic-btn{border-color:var(--border);cursor:wait}
+    .mic-btn:disabled{opacity:0.35;cursor:not-allowed}
+    .mic-glyph{font-size:2.2rem;pointer-events:none}
+    .status{font-size:0.72rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);text-align:center;min-height:18px;transition:color 0.3s}
+    .status.active{color:var(--accent)} .status.error{color:var(--red)} .status.success{color:var(--green)}
+    .status.loading::after{content:'';display:inline-block;animation:ellipsis 1.4s steps(4,end) infinite}
+    @keyframes ellipsis{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}100%{content:''}}
+    .hint{font-size:0.68rem;color:var(--muted2);text-align:center;letter-spacing:0.04em}
 
-    .mic-btn {
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
-      width: 140px; height: 140px; border-radius: 50%;
-      border: 1.5px solid var(--border2); background: var(--bg2);
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      transition: border-color 0.2s, background 0.2s, transform 0.1s;
-      user-select: none; touch-action: manipulation;
-    }
-    .mic-btn:active:not(:disabled) { transform: translate(-50%,-50%) scale(0.96); }
-    .mic-wrap.recording .mic-btn { border-color: var(--red); background: var(--red-lo); }
-    .mic-wrap.playing   .mic-btn { border-color: var(--accent); background: var(--accent-lo); cursor: default; }
-    .mic-wrap.loading   .mic-btn { border-color: var(--border); cursor: wait; }
-    .mic-wrap.editing   .mic-btn { border-color: var(--accent); background: var(--accent-lo); }
-    .mic-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-    .mic-glyph { font-size: 2.2rem; pointer-events: none; }
+    /* ── LOG ── */
+    .log-wrap{width:100%;max-width:400px;animation:fadeUp 0.6s 0.2s ease both}
+    .log{display:flex;flex-direction:column;gap:10px;max-height:200px;overflow-y:auto;padding-right:2px}
+    .log::-webkit-scrollbar{width:3px} .log::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+    .bubble{padding:10px 14px;border-radius:10px;font-size:0.78rem;line-height:1.6;max-width:88%;animation:fadeUp 0.2s ease both}
+    .bubble.user{background:var(--bg3);border:1px solid var(--border2);align-self:flex-end;color:var(--accent)}
+    .bubble.ai{background:var(--bg2);border:1px solid var(--border);align-self:flex-start;color:var(--text)}
 
-    .edit-badge {
-      display: none; position: absolute; top: -8px; right: -8px;
-      background: var(--accent); color: #0a0a08;
-      font-size: 0.55rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
-      padding: 3px 7px; border-radius: 20px;
-    }
-    .mic-wrap.editing .edit-badge { display: block; }
-
-    /* ── STATUS ── */
-    .status { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); text-align: center; min-height: 18px; transition: color 0.3s; }
-    .status.active  { color: var(--accent); }
-    .status.error   { color: var(--red); }
-    .status.success { color: var(--green); }
-    .status.loading::after { content:''; display:inline-block; animation: ellipsis 1.4s steps(4,end) infinite; }
-    @keyframes ellipsis { 0%{content:''} 25%{content:'.'} 50%{content:'..'} 75%{content:'...'} 100%{content:''} }
-    .hint { font-size: 0.68rem; color: var(--muted2); text-align: center; letter-spacing: 0.04em; }
-
-    /* ── CONVERSATION LOG ── */
-    .log-wrap { width: 100%; max-width: 400px; animation: fadeUp 0.6s 0.2s ease both; }
-    .log { display: flex; flex-direction: column; gap: 10px; max-height: 220px; overflow-y: auto; padding-right: 2px; }
-    .log::-webkit-scrollbar { width: 3px; }
-    .log::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-    .bubble { padding: 10px 14px; border-radius: 10px; font-size: 0.78rem; line-height: 1.6; max-width: 88%; animation: fadeUp 0.2s ease both; }
-    .bubble.user { background: var(--bg3); border: 1px solid var(--border2); align-self: flex-end; color: var(--accent); }
-    .bubble.ai   { background: var(--bg2); border: 1px solid var(--border);  align-self: flex-start; color: var(--text); }
-
-    /* ── BUILD PROGRESS ── */
-    .progress-wrap {
-      display: none;
-      width: 100%; max-width: 400px;
-      background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
-      padding: 16px; margin-top: 12px;
-      animation: fadeUp 0.3s ease both;
-    }
-    .progress-wrap.visible { display: block; }
-    .progress-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-    .progress-spinner {
-      width: 12px; height: 12px; border-radius: 50%;
-      border: 1.5px solid var(--border2); border-top-color: var(--accent);
-      animation: spin 0.8s linear infinite; flex-shrink: 0;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .progress-spinner.done { border-color: var(--green); border-top-color: var(--green); animation: none; }
-    .progress-title { font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
-    .progress-log { display: flex; flex-direction: column; gap: 4px; max-height: 140px; overflow-y: auto; }
-    .progress-log::-webkit-scrollbar { width: 2px; }
-    .progress-log::-webkit-scrollbar-thumb { background: var(--border2); }
-    .progress-line { font-size: 0.7rem; color: var(--muted); line-height: 1.5; }
-    .progress-line.latest { color: var(--text); }
-    .progress-line.error-line { color: var(--red); }
+    /* ── PROGRESS ── */
+    .progress-wrap{display:none;width:100%;max-width:400px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:12px;animation:fadeUp 0.3s ease both}
+    .progress-wrap.visible{display:block}
+    .progress-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+    .progress-spinner{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--border2);border-top-color:var(--accent);animation:spin 0.8s linear infinite;flex-shrink:0}
+    .progress-spinner.done{border-color:var(--green);border-top-color:var(--green);animation:none}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .progress-title{font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted)}
+    .progress-log{display:flex;flex-direction:column;gap:4px;max-height:130px;overflow-y:auto}
+    .pline{font-size:0.7rem;color:var(--muted);line-height:1.5} .pline.latest{color:var(--text)} .pline.err{color:var(--red)}
 
     /* ── THINKING BAR ── */
-    .thinking-bar { display: none; width: 100%; max-width: 400px; height: 2px; background: var(--border); border-radius: 1px; overflow: hidden; }
-    .thinking-bar.visible { display: block; }
-    .thinking-bar::after { content:''; display:block; height:100%; width:40%; background:var(--accent); border-radius:1px; animation: shimmer 1.4s ease-in-out infinite; }
-    @keyframes shimmer { 0%{transform:translateX(-150%)} 100%{transform:translateX(350%)} }
+    .thinking-bar{display:none;width:100%;max-width:400px;height:2px;background:var(--border);border-radius:1px;overflow:hidden}
+    .thinking-bar.visible{display:block}
+    .thinking-bar::after{content:'';display:block;height:100%;width:40%;background:var(--accent);border-radius:1px;animation:shimmer 1.4s ease-in-out infinite}
+    @keyframes shimmer{0%{transform:translateX(-150%)}100%{transform:translateX(350%)}}
 
-    /* ── SPACER ── */
-    .spacer { flex: 1; }
-
-    /* ── BOTTOM STACK ── */
-    .bottom-stack { width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 24px; }
+    .spacer{flex:1}
+    .bottom-stack{width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:20px}
 
     /* ── DEPLOY CARD ── */
-    .deploy-card { display: none; width: 100%; background: var(--green-lo); border: 1px solid var(--green); border-radius: 12px; padding: 20px; animation: fadeUp 0.4s ease both; }
-    .deploy-card.visible { display: block; }
-    .deploy-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
-    .deploy-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: blink 2s ease-in-out infinite; }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-    .deploy-title { font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--green); }
-    .deploy-url { display: block; font-size: 0.7rem; color: var(--text); word-break: break-all; line-height: 1.5; margin-bottom: 14px; text-decoration: none; border-bottom: 1px solid var(--border2); padding-bottom: 14px; }
-    .deploy-url:hover { color: var(--accent); }
-    .deploy-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .deploy-card{display:none;width:100%;background:var(--green-lo);border:1px solid var(--green);border-radius:12px;padding:20px;animation:fadeUp 0.4s ease both}
+    .deploy-card.visible{display:block}
+    .deploy-card-header{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+    .deploy-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:blink 2s ease-in-out infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+    .deploy-title-text{font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--green)}
+    .deploy-url{display:block;font-size:0.7rem;color:var(--text);word-break:break-all;line-height:1.5;margin-bottom:14px;text-decoration:none;border-bottom:1px solid var(--border2);padding-bottom:14px}
+    .deploy-url:hover{color:var(--accent)}
+    .deploy-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{flex:1;min-width:90px;padding:9px 12px;border-radius:8px;font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.05em;text-transform:uppercase;cursor:pointer;transition:all 0.15s;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:5px}
+    .btn-primary{background:var(--green);color:#0a0a08;border:none;font-weight:500} .btn-primary:hover{opacity:0.85}
+    .btn-secondary{background:transparent;color:var(--muted);border:1px solid var(--border2)} .btn-secondary:hover{border-color:var(--muted);color:var(--text)}
+    .btn-edit{background:var(--accent-lo);color:var(--accent);border:1px solid var(--accent-md);width:100%} .btn-edit:hover{background:var(--accent-md)}
 
-    .btn { flex: 1; min-width: 100px; padding: 9px 12px; border-radius: 8px; font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; transition: all 0.15s; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 5px; }
-    .btn-primary  { background: var(--green); color: #0a0a08; border: none; font-weight: 500; }
-    .btn-primary:hover { opacity: 0.85; }
-    .btn-secondary { background: transparent; color: var(--muted); border: 1px solid var(--border2); }
-    .btn-secondary:hover { border-color: var(--muted); color: var(--text); }
-    .btn-edit { background: var(--accent-lo); color: var(--accent); border: 1px solid var(--accent-md); width: 100%; }
-    .btn-edit:hover { background: var(--accent-md); }
+    .reset-btn{display:none;background:transparent;border:1px solid var(--border);color:var(--muted2);padding:9px 24px;border-radius:8px;cursor:pointer;font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.06em;text-transform:uppercase;transition:all 0.15s}
+    .reset-btn:hover{border-color:var(--muted);color:var(--muted)}
 
-    /* ── RESET ── */
-    .reset-btn { display: none; background: transparent; border: 1px solid var(--border); color: var(--muted2); padding: 9px 24px; border-radius: 8px; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; transition: all 0.15s; }
-    .reset-btn:hover { border-color: var(--muted); color: var(--muted); }
-
-    @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
   </style>
 </head>
 <body>
@@ -212,40 +148,32 @@
     <span class="logo">Ramble</span>
     <div class="logo-dot"></div>
     <span class="tagline">Talk · Build · Ship</span>
+    <div class="header-right">
+      <!-- Populated by JS after /auth/me check -->
+      <div id="authArea"></div>
+    </div>
   </div>
 
-  <!-- Session restore banner -->
-  <div class="restore-banner" id="restoreBanner">
-    <div class="restore-banner-text">
-      Continue building <span class="restore-banner-name" id="restoreName"></span>?
-    </div>
-    <button class="restore-btn" id="restoreBtn">Restore</button>
-    <button class="restore-dismiss" id="restoreDismiss">×</button>
+  <!-- Vercel connect nudge (shown to logged-in users without Vercel token) -->
+  <div class="vercel-banner" id="vercelBanner">
+    <div class="vercel-banner-text">Connect Vercel so deploys go to <em>your</em> account</div>
+    <a class="vercel-connect-btn" href="/auth/vercel">Connect</a>
+    <button class="vercel-dismiss" id="vercelDismiss">×</button>
   </div>
 
   <div class="mic-area">
     <div class="mic-wrap" id="micWrap">
-      <div class="ring ring-1"></div>
-      <div class="ring ring-2"></div>
-      <div class="ring ring-3"></div>
-      <div class="edit-badge" id="editBadge">Edit mode</div>
-      <button class="mic-btn" id="micBtn">
-        <span class="mic-glyph" id="micGlyph">🎙️</span>
-      </button>
+      <div class="ring ring-1"></div><div class="ring ring-2"></div><div class="ring ring-3"></div>
+      <button class="mic-btn" id="micBtn"><span class="mic-glyph" id="micGlyph">🎙️</span></button>
     </div>
-    <div>
-      <div class="status" id="status">Tap to speak</div>
-    </div>
+    <div><div class="status" id="status">Tap to speak</div></div>
     <div class="hint" id="hint">Tap once to start · tap again to send</div>
   </div>
 
   <div class="thinking-bar" id="thinkingBar"></div>
 
-  <div class="log-wrap">
-    <div class="log" id="log"></div>
-  </div>
+  <div class="log-wrap"><div class="log" id="log"></div></div>
 
-  <!-- Build progress panel -->
   <div class="progress-wrap" id="progressWrap">
     <div class="progress-header">
       <div class="progress-spinner" id="progressSpinner"></div>
@@ -260,7 +188,7 @@
     <div class="deploy-card" id="deployCard">
       <div class="deploy-card-header">
         <div class="deploy-dot"></div>
-        <span class="deploy-title" id="deployLabel">Live on Vercel</span>
+        <span class="deploy-title-text" id="deployLabel">Live on Vercel</span>
       </div>
       <a class="deploy-url" id="deployLink" href="#" target="_blank"></a>
       <div class="deploy-actions">
@@ -271,383 +199,267 @@
         <button class="btn btn-edit" id="editBtn">🎙 Request a change</button>
       </div>
     </div>
-
     <button class="reset-btn" id="resetBtn">↺ Start over</button>
   </div>
+</div>
 
+<!-- Projects panel (slides in from right) -->
+<div class="projects-panel" id="projectsPanel">
+  <div class="panel-header">
+    <span class="panel-title">Your projects</span>
+    <button class="panel-close" id="panelClose">×</button>
+  </div>
+  <div id="projectsList"></div>
 </div>
 
 <script>
-  // ── DOM refs ──────────────────────────────────────────────────────────────
-  const micWrap       = document.getElementById('micWrap');
-  const micBtn        = document.getElementById('micBtn');
-  const micGlyph      = document.getElementById('micGlyph');
-  const statusEl      = document.getElementById('status');
-  const hintEl        = document.getElementById('hint');
-  const logEl         = document.getElementById('log');
-  const thinkingBar   = document.getElementById('thinkingBar');
-  const progressWrap  = document.getElementById('progressWrap');
-  const progressLog   = document.getElementById('progressLog');
-  const progressSpinner = document.getElementById('progressSpinner');
-  const progressTitle = document.getElementById('progressTitle');
-  const deployCard    = document.getElementById('deployCard');
-  const deployLink    = document.getElementById('deployLink');
-  const deployLabel   = document.getElementById('deployLabel');
-  const openBtn       = document.getElementById('openBtn');
-  const downloadBtn   = document.getElementById('downloadBtn');
-  const editBtn       = document.getElementById('editBtn');
-  const resetBtn      = document.getElementById('resetBtn');
-  const restoreBanner = document.getElementById('restoreBanner');
-  const restoreName   = document.getElementById('restoreName');
-  const restoreBtn    = document.getElementById('restoreBtn');
-  const restoreDismiss= document.getElementById('restoreDismiss');
+  // ── DOM ───────────────────────────────────────────────────────────────────
+  const micWrap        = document.getElementById('micWrap');
+  const micBtn         = document.getElementById('micBtn');
+  const micGlyph       = document.getElementById('micGlyph');
+  const statusEl       = document.getElementById('status');
+  const hintEl         = document.getElementById('hint');
+  const logEl          = document.getElementById('log');
+  const thinkingBar    = document.getElementById('thinkingBar');
+  const progressWrap   = document.getElementById('progressWrap');
+  const progressLog    = document.getElementById('progressLog');
+  const progressSpinner= document.getElementById('progressSpinner');
+  const progressTitle  = document.getElementById('progressTitle');
+  const deployCard     = document.getElementById('deployCard');
+  const deployLink     = document.getElementById('deployLink');
+  const deployLabel    = document.getElementById('deployLabel');
+  const openBtn        = document.getElementById('openBtn');
+  const downloadBtn    = document.getElementById('downloadBtn');
+  const editBtn        = document.getElementById('editBtn');
+  const resetBtn       = document.getElementById('resetBtn');
+  const authArea       = document.getElementById('authArea');
+  const vercelBanner   = document.getElementById('vercelBanner');
+  const vercelDismiss  = document.getElementById('vercelDismiss');
+  const projectsPanel  = document.getElementById('projectsPanel');
+  const projectsList   = document.getElementById('projectsList');
+  const panelClose     = document.getElementById('panelClose');
 
   // ── State ─────────────────────────────────────────────────────────────────
-  let mediaRecorder  = null;
-  let audioChunks    = [];
-  let stream         = null;
-  let isRecording    = false;
-  let isProcessing   = false;
-  let audioContext   = null;
-  let currentSessionId = null;
-  let isEditMode     = false;  // true when user clicked "Request a change"
-  let sseSource      = null;   // active EventSource
+  let mediaRecorder = null, audioChunks = [], stream = null;
+  let isRecording = false, isProcessing = false, audioContext = null;
+  let currentSessionId = null, isEditMode = false, sseSource = null;
+  let currentUser = null;
 
-  // ── Session restore ───────────────────────────────────────────────────────
-  (async function checkRestore() {
-    const lastId = localStorage.getItem('ramble_last_session');
-    if (!lastId) return;
+  // ── Auth ──────────────────────────────────────────────────────────────────
+  async function loadAuth() {
     try {
-      const res = await fetch(`/sessions/${lastId}`);
-      if (!res.ok) { localStorage.removeItem('ramble_last_session'); return; }
+      const res  = await fetch('/auth/me');
       const data = await res.json();
-      if (!data.deploy_url) return;
-      restoreName.textContent = data.app_name || 'your last project';
-      restoreBanner.classList.add('visible');
-      restoreBtn._sessionData = data;
-    } catch(e) {}
-  })();
+      currentUser = data.user;
+      renderAuthArea();
+    } catch(e) {
+      renderAuthArea();
+    }
+  }
 
-  restoreBtn.addEventListener('click', () => {
-    const data = restoreBtn._sessionData;
-    if (!data) return;
-    currentSessionId = data.session_id;
-    showDeployCard(data.deploy_url, data.session_id, true);
-    restoreBanner.classList.remove('visible');
+  function renderAuthArea() {
+    if (!currentUser) {
+      authArea.innerHTML = `
+        <a class="auth-btn primary" href="/auth/github">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          Sign in
+        </a>`;
+      return;
+    }
+
+    // Show Vercel connect banner if not connected (and not dismissed)
+    if (!currentUser.vercel_connected && !sessionStorage.getItem('vercelDismissed')) {
+      vercelBanner.classList.add('visible');
+    }
+
+    authArea.innerHTML = `
+      <div class="user-pill">
+        <img class="avatar" src="${currentUser.avatar || ''}" alt="${currentUser.login}" />
+        <span class="user-login">${currentUser.login}</span>
+        <button class="projects-btn" onclick="openProjects()">Projects</button>
+        <button class="logout-btn" onclick="logout()" title="Sign out">×</button>
+      </div>`;
+  }
+
+  async function logout() {
+    await fetch('/auth/logout', { method: 'POST' });
+    currentUser = null;
+    renderAuthArea();
+    vercelBanner.classList.remove('visible');
+  }
+
+  vercelDismiss.addEventListener('click', () => {
+    vercelBanner.classList.remove('visible');
+    sessionStorage.setItem('vercelDismissed', '1');
   });
 
-  restoreDismiss.addEventListener('click', () => {
-    restoreBanner.classList.remove('visible');
-    localStorage.removeItem('ramble_last_session');
-  });
+  // ── Projects panel ────────────────────────────────────────────────────────
+  async function openProjects() {
+    projectsPanel.classList.add('open');
+    projectsList.innerHTML = '<div class="no-projects">Loading...</div>';
+    try {
+      const res  = await fetch('/projects');
+      if (!res.ok) { projectsList.innerHTML = '<div class="no-projects">Could not load projects</div>'; return; }
+      const data = await res.json();
+      if (!data.length) { projectsList.innerHTML = '<div class="no-projects">No projects yet</div>'; return; }
+      projectsList.innerHTML = data.map(p => `
+        <div class="project-item" onclick="restoreProject('${p.session_id}','${p.deploy_url || ''}','${p.app_name}')">
+          <div class="project-name">${p.app_name}</div>
+          ${p.deploy_url ? `<div class="project-url">${p.deploy_url}</div>` : ''}
+          ${p.github_repo ? `<div class="project-url" style="color:var(--accent)">⌥ ${p.github_repo.replace('https://github.com/','')}</div>` : ''}
+          <div class="project-date">${new Date(p.updated_at).toLocaleDateString()}</div>
+        </div>`).join('');
+    } catch(e) {
+      projectsList.innerHTML = '<div class="no-projects">Error loading projects</div>';
+    }
+  }
+
+  function restoreProject(id, url, name) {
+    projectsPanel.classList.remove('open');
+    if (!url) return;
+    currentSessionId = id;
+    showDeployCard(url, id, false);
+  }
+
+  panelClose.addEventListener('click', () => projectsPanel.classList.remove('open'));
 
   // ── Status helpers ────────────────────────────────────────────────────────
-  function setStatus(msg, type = '') {
-    statusEl.textContent = msg;
-    statusEl.className   = 'status' + (type ? ' ' + type : '');
-  }
-  function setLoading(msg) {
-    statusEl.textContent = msg;
-    statusEl.className   = 'status active loading';
-    thinkingBar.classList.add('visible');
-  }
+  function setStatus(msg, type='') { statusEl.textContent=msg; statusEl.className='status'+(type?' '+type:''); }
+  function setLoading(msg) { statusEl.textContent=msg; statusEl.className='status active loading'; thinkingBar.classList.add('visible'); }
   function clearLoading() { thinkingBar.classList.remove('visible'); }
-
-  function addBubble(text, role) {
-    const d = document.createElement('div');
-    d.className   = `bubble ${role}`;
-    d.textContent = text;
-    logEl.appendChild(d);
-    logEl.scrollTop = logEl.scrollHeight;
-  }
+  function addBubble(text, role) { const d=document.createElement('div'); d.className=`bubble ${role}`; d.textContent=text; logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight; }
 
   // ── Progress panel ────────────────────────────────────────────────────────
-  function showProgress(title) {
-    progressWrap.classList.add('visible');
-    progressTitle.textContent = title || 'Building your app';
-    progressSpinner.classList.remove('done');
-    progressLog.innerHTML = '';
-  }
+  function showProgress(title) { progressWrap.classList.add('visible'); progressTitle.textContent=title||'Building your app'; progressSpinner.classList.remove('done'); progressLog.innerHTML=''; }
+  function addProgressLine(msg, isErr=false) { const p=progressLog.querySelector('.latest'); if(p)p.classList.remove('latest'); const l=document.createElement('div'); l.className='pline latest'+(isErr?' err':''); l.textContent=msg; progressLog.appendChild(l); progressLog.scrollTop=progressLog.scrollHeight; }
+  function finishProgress(label) { progressSpinner.classList.add('done'); progressTitle.textContent=label||'Build complete'; }
 
-  function addProgressLine(msg, isError = false) {
-    // De-emphasise previous "latest"
-    const prev = progressLog.querySelector('.latest');
-    if (prev) prev.classList.remove('latest');
-
-    const line = document.createElement('div');
-    line.className   = 'progress-line latest' + (isError ? ' error-line' : '');
-    line.textContent = msg;
-    progressLog.appendChild(line);
-    progressLog.scrollTop = progressLog.scrollHeight;
-  }
-
-  function finishProgress() {
-    progressSpinner.classList.add('done');
-    progressTitle.textContent = 'Build complete';
-  }
-
-  // ── SSE – stream build progress ───────────────────────────────────────────
-  function connectSSE(sessionId, isEdit = false) {
-    if (sseSource) { sseSource.close(); sseSource = null; }
-
+  // ── SSE ───────────────────────────────────────────────────────────────────
+  function connectSSE(sessionId, isEdit=false) {
+    if (sseSource) { sseSource.close(); sseSource=null; }
     showProgress(isEdit ? 'Updating your app' : 'Building your app');
     micBtn.disabled = true;
 
     sseSource = new EventSource(`/progress/${sessionId}`);
-
-    sseSource.onmessage = (evt) => {
-      const event = JSON.parse(evt.data);
-
-      if (event.type === 'progress') {
-        addProgressLine(event.msg);
-
-      } else if (event.type === 'done') {
-        finishProgress();
-        sseSource.close(); sseSource = null;
-        const url = event.deploy_url;
-        const sid = event.session_id || sessionId;
-        showDeployCard(url, sid, isEdit);
-        micBtn.disabled = false;
-
-      } else if (event.type === 'error') {
-        addProgressLine(event.msg, true);
-        progressSpinner.classList.add('done');
-        progressTitle.textContent = 'Build failed';
-        setStatus('Build failed — tap to try again', 'error');
-        sseSource.close(); sseSource = null;
-        micBtn.disabled = false;
-        micGlyph.textContent = '🎙️';
-        resetBtn.style.display = 'block';
+    sseSource.onmessage = evt => {
+      const e = JSON.parse(evt.data);
+      if (e.type === 'progress') { addProgressLine(e.msg); return; }
+      if (e.type === 'error')    { addProgressLine(e.msg, true); finishProgress('Build failed'); setStatus('Build failed — tap to try again','error'); micGlyph.textContent='🎙️'; resetBtn.style.display='block'; sseSource.close(); sseSource=null; micBtn.disabled=false; return; }
+      if (e.type === 'done') {
+        sseSource.close(); sseSource=null;
+        if (e.deploy_url) {
+          finishProgress();
+          showDeployCard(e.deploy_url, e.session_id || sessionId, isEdit);
+        } else {
+          finishProgress('Build failed');
+          setStatus('Build failed — tap to try again','error');
+          micGlyph.textContent='🎙️';
+          resetBtn.style.display='block';
+        }
+        micBtn.disabled=false;
       }
     };
-
-    sseSource.onerror = () => {
-      sseSource.close(); sseSource = null;
-      if (!deployCard.classList.contains('visible')) {
-        addProgressLine('Connection lost — check server logs', true);
-        setStatus('Connection error', 'error');
-        micBtn.disabled = false;
-      }
-    };
+    sseSource.onerror = () => { sseSource.close(); sseSource=null; if(!deployCard.classList.contains('visible')){ addProgressLine('Connection lost','true'); micBtn.disabled=false; } };
   }
 
-  function showDeployCard(url, sessionId, isEdit = false) {
-    currentSessionId = sessionId;
-    localStorage.setItem('ramble_last_session', sessionId);
-
-    deployLink.href        = url;
-    deployLink.textContent = url;
-    openBtn.href           = url;
-    downloadBtn.href       = `/download/${sessionId}`;
-    deployLabel.textContent = isEdit ? 'Updated on Vercel' : 'Live on Vercel';
+  function showDeployCard(url, sid, isEdit=false) {
+    currentSessionId=sid;
+    deployLink.href=url; deployLink.textContent=url; openBtn.href=url;
+    downloadBtn.href=`/download/${sid}`;
+    deployLabel.textContent=isEdit?'Updated on Vercel':'Live on Vercel';
     deployCard.classList.add('visible');
-
-    setStatus(isEdit ? 'Updated ✓' : 'Deployed ✓', 'success');
-    micGlyph.textContent = '✓';
-    hintEl.textContent   = '';
-    resetBtn.style.display = 'block';
+    setStatus(isEdit?'Updated ✓':'Deployed ✓','success');
+    micGlyph.textContent='✓'; hintEl.textContent='';
+    resetBtn.style.display='block';
+    if (!isEditMode) isEditMode=false;
   }
 
   // ── Mic ───────────────────────────────────────────────────────────────────
-  function unlockAudio() {
-    if (!audioContext) {
-      audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const buf = audioContext.createBuffer(1, 1, 22050);
-      const src = audioContext.createBufferSource();
-      src.buffer = buf; src.connect(audioContext.destination); src.start(0);
-    }
-  }
-
-  async function getMic() {
-    if (stream) return stream;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-      return stream;
-    } catch(e) {
-      setStatus('Mic access denied', 'error');
-      throw e;
-    }
-  }
+  function unlockAudio() { if(!audioContext){audioContext=new(window.AudioContext||window.webkitAudioContext)();const b=audioContext.createBuffer(1,1,22050);const s=audioContext.createBufferSource();s.buffer=b;s.connect(audioContext.destination);s.start(0);} }
+  async function getMic() { if(stream)return stream; try{stream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});return stream;}catch(e){setStatus('Mic access denied','error');throw e;} }
 
   async function startRecording() {
-    if (isProcessing) return;
+    if(isProcessing)return;
     unlockAudio();
     try {
-      const s = await getMic();
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus' : 'audio/mp4';
-      audioChunks  = [];
-      mediaRecorder = new MediaRecorder(s, { mimeType });
-      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
-      mediaRecorder.start();
-      isRecording = true;
-
-      micWrap.classList.remove('loading', 'playing');
-      micWrap.classList.add(isEditMode ? 'editing' : 'recording');
-      micGlyph.textContent = '⏹';
-      setStatus(isEditMode ? 'Listening (edit mode)' : 'Listening', 'active');
-      hintEl.textContent   = 'Tap again to send';
-    } catch(e) {
-      setStatus('Could not start mic', 'error');
-    }
+      const s=await getMic();
+      const mt=MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?'audio/webm;codecs=opus':'audio/mp4';
+      audioChunks=[]; mediaRecorder=new MediaRecorder(s,{mimeType:mt});
+      mediaRecorder.ondataavailable=e=>{if(e.data.size>0)audioChunks.push(e.data);};
+      mediaRecorder.start(); isRecording=true;
+      micWrap.classList.remove('loading','playing');
+      micWrap.classList.add(isEditMode?'playing':'recording');
+      micGlyph.textContent='⏹';
+      setStatus(isEditMode?'Listening (edit mode)':'Listening','active');
+      hintEl.textContent='Tap again to send';
+    } catch(e){setStatus('Could not start mic','error');}
   }
 
   async function stopAndSend() {
-    if (!isRecording || !mediaRecorder) return;
-    isRecording = false;
-    micWrap.classList.remove('recording', 'editing');
-    micGlyph.textContent = '⏳';
-    hintEl.textContent   = '';
+    if(!isRecording||!mediaRecorder)return;
+    isRecording=false; micWrap.classList.remove('recording','playing'); micGlyph.textContent='⏳'; hintEl.textContent='';
+    await new Promise(r=>{mediaRecorder.onstop=r;mediaRecorder.stop();});
+    if(!audioChunks.length){setStatus('Nothing captured — try again','error');resetMic();return;}
+    isProcessing=true; micBtn.disabled=true; micWrap.classList.add('loading'); setLoading('Thinking');
 
-    await new Promise(r => { mediaRecorder.onstop = r; mediaRecorder.stop(); });
-
-    if (!audioChunks.length) {
-      setStatus('Nothing captured — try again', 'error');
-      resetMic();
-      return;
-    }
-
-    isProcessing    = true;
-    micBtn.disabled = true;
-    micWrap.classList.add('loading');
-    setLoading('Transcribing');
-
-    const blob     = new Blob(audioChunks, { type: mediaRecorder.mimeType });
-    const formData = new FormData();
-    formData.append('audio', blob, 'recording.webm');
+    const fd=new FormData();
+    fd.append('audio',new Blob(audioChunks,{type:mediaRecorder.mimeType}),'recording.webm');
 
     let data;
     try {
-      setLoading('Thinking');
-      const endpoint = isEditMode ? `/edit?session_id=${currentSessionId}` : '/chat';
-      const res = await fetch(endpoint, { method: 'POST', body: formData });
-      if (!res.ok) throw new Error(`Server ${res.status}: ${await res.text()}`);
-      data = await res.json();
-    } catch(e) {
-      setStatus('Error: ' + e.message, 'error');
-      clearLoading();
-      isProcessing    = false;
-      micBtn.disabled = false;
-      micWrap.classList.remove('loading');
-      resetMic();
-      return;
-    }
+      const endpoint = (isEditMode && currentSessionId) ? `/edit?session_id=${currentSessionId}` : '/chat';
+      const res=await fetch(endpoint,{method:'POST',body:fd});
+      if(!res.ok) throw new Error(`Server ${res.status}: ${await res.text()}`);
+      data=await res.json();
+    } catch(e) { setStatus('Error: '+e.message,'error'); clearLoading(); isProcessing=false; micBtn.disabled=false; micWrap.classList.remove('loading'); resetMic(); return; }
 
     clearLoading();
-    if (data.transcript) addBubble(data.transcript, 'user');
-    if (data.message)    addBubble(data.message,    'ai');
-
-    micWrap.classList.remove('loading');
-    micWrap.classList.add('playing');
-    micGlyph.textContent = '🔊';
-    setStatus('Speaking', 'active');
+    if(data.transcript) addBubble(data.transcript,'user');
+    if(data.message)    addBubble(data.message,'ai');
+    micWrap.classList.remove('loading'); micWrap.classList.add('playing'); micGlyph.textContent='🔊';
+    setStatus('Speaking','active');
     await playAudio(data.audio_url);
     micWrap.classList.remove('playing');
 
-    // ── Handle /chat response ─────────────────────────────────────────────
-    if (!isEditMode) {
-      if (data.complete && data.session_id) {
-        // Spec complete — build started in background, connect SSE
-        currentSessionId = data.session_id;
-        micGlyph.textContent = '⏳';
-        setStatus('Building', 'active');
-        connectSSE(data.session_id, false);
-        // micBtn stays disabled until SSE 'done' fires
-        isProcessing = false;
-        return;
-      }
+    if(data.complete && data.session_id){
+      connectSSE(data.session_id, false);
+      isEditMode=false; isProcessing=false; return;
     }
-
-    // ── Handle /edit response ─────────────────────────────────────────────
-    if (isEditMode) {
-      if (data.ready && data.session_id) {
-        // Edit confirmed — rebuild started
-        setStatus('Updating', 'active');
-        connectSSE(data.session_id, true);
-        isEditMode = false;
-        micWrap.classList.remove('editing');
-        isProcessing = false;
-        return;
-      } else if (data.needs_clarify) {
-        // Need one more turn of clarification
-        resetMic();
-        isProcessing = false;
-        return;
-      }
+    if(data.ready && data.session_id){
+      connectSSE(data.session_id, true);
+      isEditMode=false; isProcessing=false; return;
     }
-
-    // Default: continue conversation
-    resetMic();
-    isProcessing = false;
+    resetMic(); isProcessing=false;
   }
 
-  function resetMic() {
-    micGlyph.textContent = isEditMode ? '✏️' : '🎙️';
-    micBtn.disabled      = false;
-    setStatus(isEditMode ? 'Describe your change' : 'Tap to speak', '');
-    hintEl.textContent   = 'Tap once to start · tap again to send';
-    micWrap.classList.remove('loading', 'recording', 'playing', 'editing');
-    if (isEditMode) micWrap.classList.add('editing');
-  }
+  function resetMic() { micGlyph.textContent=isEditMode?'✏️':'🎙️'; micBtn.disabled=false; setStatus(isEditMode?'Describe your change':'Tap to speak',''); hintEl.textContent='Tap once to start · tap again to send'; micWrap.className='mic-wrap'; }
 
-  // ── Audio playback ────────────────────────────────────────────────────────
   async function playAudio(url) {
-    try {
-      const res    = await fetch(url);
-      const buf    = await res.arrayBuffer();
-      const decoded = await audioContext.decodeAudioData(buf);
-      return new Promise(resolve => {
-        const src = audioContext.createBufferSource();
-        src.buffer  = decoded;
-        src.connect(audioContext.destination);
-        src.onended = resolve;
-        src.start(0);
-      });
-    } catch(e) { console.warn('Audio playback error:', e); }
+    try { const r=await fetch(url); const ab=await r.arrayBuffer(); const dec=await audioContext.decodeAudioData(ab); return new Promise(resolve=>{const s=audioContext.createBufferSource();s.buffer=dec;s.connect(audioContext.destination);s.onended=resolve;s.start(0);}); } catch(e){}
   }
 
-  // ── Mic button ────────────────────────────────────────────────────────────
-  micBtn.addEventListener('click', () => {
-    if (micBtn.disabled || isProcessing) return;
-    if (isRecording) stopAndSend();
-    else             startRecording();
+  micBtn.addEventListener('click',()=>{if(micBtn.disabled||isProcessing)return;if(isRecording)stopAndSend();else startRecording();});
+
+  editBtn.addEventListener('click',()=>{
+    if(!currentSessionId)return;
+    isEditMode=true; micGlyph.textContent='✏️'; micBtn.disabled=false;
+    setStatus('Describe your change','active'); hintEl.textContent='Tap to record · tap again to send';
+    deployCard.classList.remove('visible'); progressWrap.classList.remove('visible'); resetBtn.style.display='none';
   });
 
-  // ── Edit button ───────────────────────────────────────────────────────────
-  editBtn.addEventListener('click', () => {
-    if (!currentSessionId) return;
-    isEditMode = true;
-    micWrap.classList.add('editing');
-    micGlyph.textContent = '✏️';
-    micBtn.disabled      = false;
-    setStatus('Describe your change', 'active');
-    hintEl.textContent   = 'Tap to record · tap again to send';
-    deployCard.classList.remove('visible');
-    progressWrap.classList.remove('visible');
-    resetBtn.style.display = 'none';
+  resetBtn.addEventListener('click',async()=>{
+    if(sseSource){sseSource.close();sseSource=null;}
+    await fetch('/reset',{method:'POST'});
+    logEl.innerHTML=''; deployCard.classList.remove('visible'); progressWrap.classList.remove('visible');
+    progressLog.innerHTML=''; resetBtn.style.display='none';
+    isEditMode=false; currentSessionId=null;
+    micBtn.disabled=false; micGlyph.textContent='🎙️';
+    hintEl.textContent='Tap once to start · tap again to send';
+    setStatus('Tap to speak',''); clearLoading(); isProcessing=false; isRecording=false; micWrap.className='mic-wrap';
   });
 
-  // ── Reset ─────────────────────────────────────────────────────────────────
-  resetBtn.addEventListener('click', async () => {
-    if (sseSource) { sseSource.close(); sseSource = null; }
-    await fetch('/reset', { method: 'POST' });
-    logEl.innerHTML = '';
-    deployCard.classList.remove('visible');
-    progressWrap.classList.remove('visible');
-    progressLog.innerHTML = '';
-    resetBtn.style.display = 'none';
-    isEditMode = false;
-    currentSessionId = null;
-    localStorage.removeItem('ramble_last_session');
-    micBtn.disabled      = false;
-    micGlyph.textContent = '🎙️';
-    hintEl.textContent   = 'Tap once to start · tap again to send';
-    setStatus('Tap to speak', '');
-    clearLoading();
-    isProcessing = false;
-    isRecording  = false;
-    micWrap.className = 'mic-wrap';
-  });
+  // ── Init ──────────────────────────────────────────────────────────────────
+  loadAuth();
 </script>
 </body>
 </html>
