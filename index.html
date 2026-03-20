@@ -7,6 +7,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#0a0a08" />
   <title>Ramble</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230a0a08'/%3E%3Ccircle cx='16' cy='16' r='6' fill='none' stroke='%23d4a843' stroke-width='1.5'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='%23d4a843'/%3E%3Cline x1='16' y1='22' x2='16' y2='27' stroke='%23d4a843' stroke-width='1.5' stroke-linecap='round'/%3E%3Cline x1='13' y1='27' x2='19' y2='27' stroke='%23d4a843' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
@@ -138,6 +140,26 @@
     .reset-btn{display:none;background:transparent;border:1px solid var(--border);color:var(--muted2);padding:9px 24px;border-radius:8px;cursor:pointer;font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.06em;text-transform:uppercase;transition:all 0.15s}
     .reset-btn:hover{border-color:var(--muted);color:var(--muted)}
 
+    /* ── ONBOARDING OVERLAY ── */
+    .onboard {
+      display:none; position:fixed; inset:0; z-index:200;
+      background:rgba(10,10,8,0.85); backdrop-filter:blur(4px);
+      align-items:center; justify-content:center;
+    }
+    .onboard.visible { display:flex; }
+    .onboard-card {
+      width:280px; background:var(--bg2); border:1px solid var(--border2);
+      border-radius:16px; padding:28px 24px; text-align:center;
+      animation:fadeUp 0.4s ease both;
+    }
+    .onboard-mic { font-size:2.5rem; margin-bottom:16px; }
+    .onboard-title { font-family:'Instrument Serif',serif; font-size:1.3rem; margin-bottom:10px; color:var(--text); }
+    .onboard-steps { display:flex; flex-direction:column; gap:10px; margin-bottom:22px; text-align:left; }
+    .onboard-step { display:flex; align-items:flex-start; gap:10px; font-size:0.72rem; color:var(--muted); line-height:1.5; }
+    .onboard-step-num { background:var(--bg3); border:1px solid var(--border2); color:var(--accent); border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:0.65rem; flex-shrink:0; margin-top:1px; }
+    .onboard-start { width:100%; padding:11px; background:var(--accent); color:#0a0a08; border:none; border-radius:8px; font-family:'DM Mono',monospace; font-size:0.72rem; letter-spacing:0.05em; text-transform:uppercase; font-weight:500; cursor:pointer; transition:opacity 0.15s; }
+    .onboard-start:hover { opacity:0.85; }
+
     @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
   </style>
 </head>
@@ -198,8 +220,25 @@
       <div class="deploy-actions" style="margin-top:8px">
         <button class="btn btn-edit" id="editBtn">🎙 Request a change</button>
       </div>
+      <div class="deploy-actions" style="margin-top:6px">
+        <button class="btn btn-secondary" id="regenBtn" style="font-size:0.62rem">↺ Regenerate</button>
+      </div>
     </div>
     <button class="reset-btn" id="resetBtn">↺ Start over</button>
+  </div>
+</div>
+
+<!-- Onboarding overlay (first-time users) -->
+<div class="onboard" id="onboard">
+  <div class="onboard-card">
+    <div class="onboard-mic">🎙️</div>
+    <div class="onboard-title">Build with your voice</div>
+    <div class="onboard-steps">
+      <div class="onboard-step"><div class="onboard-step-num">1</div><span>Tap the mic and describe your app idea</span></div>
+      <div class="onboard-step"><div class="onboard-step-num">2</div><span>Answer a few quick questions — Ramble figures out the details</span></div>
+      <div class="onboard-step"><div class="onboard-step-num">3</div><span>Confirm the plan, then get a live URL in ~60 seconds</span></div>
+    </div>
+    <button class="onboard-start" id="onboardStart">Let's go</button>
   </div>
 </div>
 
@@ -231,6 +270,7 @@
   const openBtn        = document.getElementById('openBtn');
   const downloadBtn    = document.getElementById('downloadBtn');
   const editBtn        = document.getElementById('editBtn');
+  const regenBtn       = document.getElementById('regenBtn');
   const resetBtn       = document.getElementById('resetBtn');
   const authArea       = document.getElementById('authArea');
   const vercelBanner   = document.getElementById('vercelBanner');
@@ -238,12 +278,24 @@
   const projectsPanel  = document.getElementById('projectsPanel');
   const projectsList   = document.getElementById('projectsList');
   const panelClose     = document.getElementById('panelClose');
+  const onboard        = document.getElementById('onboard');
+  const onboardStart   = document.getElementById('onboardStart');
 
   // ── State ─────────────────────────────────────────────────────────────────
   let mediaRecorder = null, audioChunks = [], stream = null;
   let isRecording = false, isProcessing = false, audioContext = null;
   let currentSessionId = null, isEditMode = false, sseSource = null;
   let currentUser = null;
+
+  // ── Onboarding ────────────────────────────────────────────────────────────
+  if (!localStorage.getItem('ramble_seen')) {
+    onboard.classList.add('visible');
+  }
+  onboardStart.addEventListener('click', () => {
+    localStorage.setItem('ramble_seen', '1');
+    onboard.classList.remove('visible');
+    unlockAudio();
+  });
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   async function loadAuth() {
@@ -445,6 +497,27 @@
     isEditMode=true; micGlyph.textContent='✏️'; micBtn.disabled=false;
     setStatus('Describe your change','active'); hintEl.textContent='Tap to record · tap again to send';
     deployCard.classList.remove('visible'); progressWrap.classList.remove('visible'); resetBtn.style.display='none';
+  });
+
+  regenBtn.addEventListener('click', async () => {
+    if (!currentSessionId || isProcessing) return;
+    micBtn.disabled = true;
+    regenBtn.disabled = true;
+    regenBtn.textContent = '↺ Regenerating...';
+    try {
+      const res = await fetch(`/regenerate/${currentSessionId}`, { method: 'POST' });
+      if (!res.ok) throw new Error(await res.text());
+      const { session_id } = await res.json();
+      deployCard.classList.remove('visible');
+      resetBtn.style.display = 'none';
+      connectSSE(session_id, false);
+    } catch(e) {
+      setStatus('Regenerate failed: ' + e.message, 'error');
+      micBtn.disabled = false;
+    } finally {
+      regenBtn.disabled = false;
+      regenBtn.textContent = '↺ Regenerate';
+    }
   });
 
   resetBtn.addEventListener('click',async()=>{

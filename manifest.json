@@ -1,0 +1,18 @@
+{
+  "name": "Ramble",
+  "short_name": "Ramble",
+  "description": "Talk. Build. Ship. Build apps with your voice.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a08",
+  "theme_color": "#0a0a08",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='128' fill='%230a0a08'/><circle cx='256' cy='256' r='96' fill='none' stroke='%23d4a843' stroke-width='24'/><circle cx='256' cy='256' r='40' fill='%23d4a843'/><line x1='256' y1='352' x2='256' y2='432' stroke='%23d4a843' stroke-width='24' stroke-linecap='round'/><line x1='208' y1='432' x2='304' y2='432' stroke='%23d4a843' stroke-width='24' stroke-linecap='round'/></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
